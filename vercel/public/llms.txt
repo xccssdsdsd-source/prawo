@@ -23,3 +23,21 @@ Dokumentacja maszynowa: /openapi.json (OpenAPI 3.1). Serwer MCP: /api/mcp (narz�
 6. Orzeczenia, umowy i kategoria "inne" są domyślnie pomijane; użyj parametru kategoria, jeśli ich potrzebujesz, i pamiętaj, że nie są przepisami.
 7. Odpowiedź ze snippetem to tylko fragment – przed cytatem pobierz cały artykuł.
 8. Identyfikatory: eli = DU/1964/93; doc_id = eli albo eli#U (tekst ujednolicony; w URL # jako %23).
+
+## Baza wiedzy o polskim prawie (markdown po polsku, bez klucza)
+Poradniki, jak czytać, cytować i weryfikować polskie prawo; każdy plik ma datę weryfikacji, a odnośniki do przepisów są sprawdzone z tekstem w bazie. Spis maszynowy: /wiedza/index.json (slug, tytuł, opis, tagi, data weryfikacji). Plik: /wiedza/<slug>.md. Przeczytaj najpierw metodykę dla agentów i listę pułapek, gdy odpowiadasz na pytanie prawne.
+- /wiedza/jak-czytac-prawo-dla-agentow-ai.md – procedura odpowiedzi narzędziami search_law/get_article/get_act, wzór odpowiedzi.
+- /wiedza/najczestsze-pulapki.md – lista błędów (akt zmieniający, przepis szczególny, przepisy przejściowe, terminy, aktualność).
+- /wiedza/teksty-jednolite-ujednolicone-zmieniajace.md – kategorie tekstów w API i wybór wersji.
+- /wiedza/hierarchia-zrodel-prawa.md – Konstytucja, ustawy, rozporządzenia, prawo miejscowe, orzeczenia TK.
+- /wiedza/jak-czytac-akt-prawny.md – artykuł, ustęp, paragraf, przypisy, (uchylony), indeksy numeracji.
+- /wiedza/jak-cytowac-przepisy.md – cytowanie przepisów, Dz. U., M.P., z późn. zm.
+- /wiedza/wejscie-w-zycie-i-vacatio-legis.md – wejście w życie, liczenie terminu, przepisy przejściowe.
+- /wiedza/terminy-i-przedawnienie.md – liczenie terminów, przedawnienie, terminy procesowe.
+- /wiedza/postepowania-i-organy.md – sądy i organy, k.p.c., k.p.k., k.p.a., p.p.s.a.
+- /wiedza/kodeksy-i-glowne-ustawy.md – tabela kodeksów i ustaw: adres publikacyjny, ELI, doc_id w bazie.
+- /wiedza/mapa-tematow-i-przepisow.md – typowe pytania i właściwe artykuły (punkty startowe do weryfikacji).
+- /wiedza/nadchodzace-zmiany.md – zapowiedziane zmiany przepisów (przyszłe brzmienia) wg stanu na datę weryfikacji.
+- /wiedza/slownik-pojec.md – słownik pojęć prawnych z odnośnikami do przepisów.
+- /wiedza/gdzie-szukac-dalej.md – oficjalne portale (ISAP, API ELI, EUR-Lex, orzecznictwo) i zakres bazy.
+Zasada: pliki wiedzy to wskazówki metodyczne, nie źródło prawa. Treść przepisu zawsze pobierz przez get_article; w odpowiedzi nadal podaj "stan danych na dzień <data_as_of>" i zastrzeżenie, że to nie jest porada prawna. Pliki oznaczone [WO] zawierają wiedzę ogólną niezweryfikowaną w danych.

@@ -1,0 +1,100 @@
+[
+  {
+    "slug": "hierarchia-zrodel-prawa",
+    "tytul": "Hierarchia źródeł prawa w Polsce",
+    "opis": "Konstytucja, ustawy, umowy międzynarodowe, rozporządzenia, prawo miejscowe, akty wewnętrzne i orzeczenia TK: miejsce w hierarchii, kolizje przepisów i gdzie które akty się ogłasza.",
+    "tagi": ["źródła prawa", "Konstytucja", "rozporządzenia", "lex specialis", "Dz.U.", "M.P.", "Trybunał Konstytucyjny"],
+    "zweryfikowano": "2026-10-11"
+  },
+  {
+    "slug": "jak-czytac-akt-prawny",
+    "tytul": "Jak czytać akt prawny",
+    "opis": "Budowa ustawy, artykuł, ustęp, paragraf, punkt, litera; daty w tytule; przypisy, (uchylony) i przyszłe brzmienia w tekstach ujednoliconych; numeracja z indeksami; ustawy zmieniające.",
+    "tagi": ["struktura aktu", "artykuł", "paragraf", "ustęp", "uchylony", "indeksy", "ustawa zmieniająca", "przypisy"],
+    "zweryfikowano": "2026-10-11"
+  },
+  {
+    "slug": "jak-cytowac-przepisy",
+    "tytul": "Jak cytować przepisy prawa",
+    "opis": "Powoływanie jednostek (art., ust., pkt, lit.), oznaczanie aktu i dziennika (Dz. U., M.P., z późn. zm.), skróty, cytowanie z naszego API i orzeczeń.",
+    "tagi": ["cytowanie", "Dz. U.", "tekst jednolity", "z późn. zm.", "sygnatura", "adres publikacyjny"],
+    "zweryfikowano": "2026-10-11"
+  },
+  {
+    "slug": "teksty-jednolite-ujednolicone-zmieniajace",
+    "tytul": "Tekst jednolity, ujednolicony, zmieniający i pierwotny",
+    "opis": "Różnice między rodzajami tekstu aktu i ich kategorie w API (ujednolicone, jednolite, podstawowe, zmieniające); którą wersję wybrać i jak ocenić aktualność.",
+    "tagi": ["tekst jednolity", "tekst ujednolicony", "ISAP", "kategorie API", "doc_id", "aktualność"],
+    "zweryfikowano": "2026-10-11"
+  },
+  {
+    "slug": "wejscie-w-zycie-i-vacatio-legis",
+    "tytul": "Wejście w życie, vacatio legis i przepisy przejściowe",
+    "opis": "Ogłoszenie, 14 dni, liczenie terminu wejścia w życie, dzień ogłoszenia a data aktu, moc wsteczna, przepisy przejściowe i dostosowujące z przykładami.",
+    "tagi": ["vacatio legis", "wejście w życie", "przepisy przejściowe", "moc wsteczna", "ogłoszenie", "intertemporalne"],
+    "zweryfikowano": "2026-10-11"
+  },
+  {
+    "slug": "kodeksy-i-glowne-ustawy",
+    "tytul": "Kodeksy i główne ustawy: adresy, ELI i doc_id w bazie",
+    "opis": "Tabele kodeksów i ważnych ustaw z adresem publikacyjnym, ELI, doc_id tekstu ujednoliconego, datą zmiany rekordu i najnowszym tekstem jednolitym; ustawy wprowadzające.",
+    "tagi": ["kodeksy", "k.c.", "k.p.c.", "k.k.", "k.p.k.", "k.p.", "k.p.a.", "ELI", "doc_id", "skróty"],
+    "zweryfikowano": "2026-10-11"
+  },
+  {
+    "slug": "terminy-i-przedawnienie",
+    "tytul": "Terminy i przedawnienie",
+    "opis": "Liczenie terminów w k.c., k.p.c., k.p.a., k.p.k. i ordynacji; przedawnienie roszczeń, zobowiązań podatkowych i karalności; terminy procesowe i przywrócenie terminu.",
+    "tagi": ["terminy", "przedawnienie", "apelacja", "termin zawity", "przywrócenie terminu", "roszczenia"],
+    "zweryfikowano": "2026-10-11"
+  },
+  {
+    "slug": "postepowania-i-organy",
+    "tytul": "Postępowania i organy: sądy, kodeksy procesowe, administracja",
+    "opis": "Zwięzła mapa: sądy powszechne, SN, sądy administracyjne, TK, prokuratura; postępowanie cywilne, karne, administracyjne, sądowoadministracyjne i podatkowe.",
+    "tagi": ["sądy", "k.p.c.", "k.p.k.", "k.p.a.", "p.p.s.a.", "Trybunał Konstytucyjny", "prokuratura", "właściwość"],
+    "zweryfikowano": "2026-10-11"
+  },
+  {
+    "slug": "slownik-pojec",
+    "tytul": "Słownik pojęć prawnych",
+    "opis": "Definicje ustawowe i podstawowe pojęcia (konsument, przedsiębiorca, rzecz, czynność prawna, decyzja, zobowiązanie podatkowe, pracownik, vacatio legis) z odnośnikami do przepisów.",
+    "tagi": ["słownik", "definicje", "pojęcia prawne", "konsument", "przedsiębiorca", "pracownik"],
+    "zweryfikowano": "2026-10-11"
+  },
+  {
+    "slug": "gdzie-szukac-dalej",
+    "tytul": "Gdzie szukać dalej: oficjalne portale i źródła prawa",
+    "opis": "ISAP, API ELI Sejmu, Dziennik Ustaw, Monitor Polski, RCL, orzecznictwo (TK, SN, NSA, SAOS), EUR-Lex, TSUE, ETPCz oraz organy tematyczne – z oceną pewności i uwagami o dostępie dla skryptów.",
+    "tagi": ["ISAP", "API ELI", "EUR-Lex", "orzecznictwo", "SAOS", "portale", "RCL"],
+    "zweryfikowano": "2026-10-11"
+  },
+  {
+    "slug": "jak-czytac-prawo-dla-agentow-ai",
+    "tytul": "Jak czytać prawo: metodyka dla agentów AI",
+    "opis": "Procedura odpowiedzi narzędziami search_law, get_article i get_act: lex specialis, odesłania, delegacje, przepisy przejściowe, nieaktualność, pułapki w danych i wzór odpowiedzi.",
+    "tagi": ["agent AI", "search_law", "get_article", "get_act", "metodyka", "lex specialis", "nieaktualność"],
+    "zweryfikowano": "2026-10-11"
+  },
+  {
+    "slug": "najczestsze-pulapki",
+    "tytul": "Najczęstsze pułapki przy czytaniu i stosowaniu polskiego prawa",
+    "opis": "Lista błędów: akt zmieniający zamiast obowiązującego tekstu, przepis szczególny, przepisy przejściowe, daty, terminy, przyszłe brzmienia, zakres bazy – ze sprawdzonymi przykładami.",
+    "tagi": ["pułapki", "błędy", "przepisy przejściowe", "terminy", "lex specialis", "aktualność"],
+    "zweryfikowano": "2026-10-11"
+  },
+  {
+    "slug": "nadchodzace-zmiany",
+    "tytul": "Zapowiedziane zmiany przepisów (przyszłe brzmienia)",
+    "opis": "Zdjęcie stanu na 11.10.2026: adnotacje w tekstach ujednoliconych o zmianach, które jeszcze nie weszły w życie (m.in. mobbing w k.p. od 5.11.2026), z datami i ustawami zmieniającymi oraz poleceniem odświeżenia.",
+    "tagi": ["nowelizacje", "zapowiedziane zmiany", "przyszłe brzmienie", "mobbing", "kodeks pracy", "aktualność"],
+    "zweryfikowano": "2026-10-11"
+  },
+  {
+    "slug": "mapa-tematow-i-przepisow",
+    "tytul": "Mapa tematów: gdzie w prawie szukać odpowiedzi",
+    "opis": "Typowe pytania (umowy, szkoda, spadek, rodzina, praca, prawo karne, konsument, spółki, administracja) z wykazem właściwych artykułów jako punktów startowych do weryfikacji.",
+    "tagi": ["tematy", "mapa przepisów", "umowy", "spadki", "prawo pracy", "prawo karne", "konsument"],
+    "zweryfikowano": "2026-10-11"
+  }
+]
