@@ -1,0 +1,42 @@
+{
+  "data_as_of": "2026-10-11",
+  "downloaded_at_utc": "2026-10-11T15:21+00:00",
+  "source": "API ELI Sejmu RP (https://api.sejm.gov.pl/eli)",
+  "scope": "Dz.U. i M.P. – tylko akty o statusie 'obowiązujący' (+ teksty ujednolicone ISAP)",
+  "dz_u": {
+    "documents": 17737,
+    "latest_act": "Dz.U. 2026 poz. 1307",
+    "latest_promulgation_date": "2026-10-08",
+    "latest_api_change_date": "2026-10-09"
+  },
+  "m_p": {
+    "documents": 2743,
+    "latest_act": "M.P. 2026 poz. 977",
+    "latest_promulgation_date": "2026-10-06"
+  },
+  "consolidated_texts": {
+    "documents": 1688,
+    "latest_act_with_consolidated_text": "Dz.U. 2026 poz. 1070",
+    "latest_promulgation_date_among_them": "2026-08-07",
+    "note": "Tekst ujednolicony odzwierciedla stan prawny na dzień jego sporządzenia; zmiany ogłoszone później mogą nie być w nim ujęte."
+  },
+  "categories": {
+    "umowa": 1627,
+    "podstawowe": 6823,
+    "inne": 60,
+    "zmieniajace": 5155,
+    "jednolite": 2675,
+    "orzeczenie": 1397,
+    "mp": 2743,
+    "ujednolicone": 1688
+  },
+  "not_covered": [
+    "akty uchylone i wygasłe",
+    "prawo UE",
+    "orzecznictwo sądów (poza wyrokami TK ogłaszanymi w Dz.U.)",
+    "akty prawa miejscowego i dzienniki wojewódzkie",
+    "akty ogłoszone po dacie data_as_of"
+  ],
+  "legal_notice": "Narzędzie pomocnicze, nie porada prawna. Aktualne brzmienie przepisu zawsze zweryfikuj w ISAP (isap.sejm.gov.pl).",
+  "indexed_chunks_file_mb": 955.6
+}

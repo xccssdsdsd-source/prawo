@@ -1,0 +1,33 @@
+# Dane (gigabajty PDF/HTML) - NIE do repo
+dane/
+pipeline/out/
+indeks.sqlite*
+*.sqlite
+*.sqlite3
+*.log
+*.err
+*.jsonl
+
+# Zaleznosci / build
+node_modules/
+vercel/.vercel/
+.vercel/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Sekrety
+.env
+.env.*
+!.env.example
+!vercel/.env.example
+*.pem
+*.key
+
+# Edytor / narzedzia
+.claude/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

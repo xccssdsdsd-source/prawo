@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prawo PL – API dla modeli AI</title>
+<meta name="description" content="Otwarte API polskiego prawa (Dz.U. i M.P.) dla modeli AI: wyszukiwanie na poziomie artykułów, REST, MCP, OpenAPI. Bez klucza.">
+<style>
+:root{
+  --bg:#fafaf7;--fg:#1c1d20;--muted:#55585f;--card:#fff;--line:#d9d9d2;
+  --accent:#1f4e8c;--accent-fg:#fff;--hl:#fff7e0;--hl-line:#c99a1f;--code:#f0f0ea;--warn:#8a4b00;--err:#a11a1a;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#131416;--fg:#e8e8e4;--muted:#a3a6ad;--card:#1b1c1f;--line:#34363b;
+  --accent:#8db6ee;--accent-fg:#10151c;--hl:#262012;--hl-line:#c99a1f;--code:#23252a;--warn:#e8b062;--err:#ff8a8a;}
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px}
+header.hero{padding:48px 0 24px}
+h1{font-size:clamp(1.9rem,6vw,2.8rem);line-height:1.15;margin:0 0 8px;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:0 0 16px}
+h2{font-size:1.45rem;margin:0 0 4px;line-height:1.25}
+h2+.sub{margin-bottom:16px;font-size:.95rem}
+h3{font-size:1.05rem;margin:0 0 8px}
+section{padding:28px 0;border-top:1px solid var(--line)}
+a{color:var(--accent)}
+a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:3px}
+.lead{font-size:1.1rem;max-width:62ch}
+.tags{display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:16px 0 0;list-style:none}
+.tags li{border:1px solid var(--line);border-radius:999px;padding:2px 12px;font-size:.88rem;background:var(--card)}
+#freshness{background:var(--hl);border:2px solid var(--hl-line);border-radius:10px;padding:20px;margin:8px 0}
+.asof{font-size:clamp(1.5rem,5.5vw,2.2rem);font-weight:700;line-height:1.2;margin:0 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:0 0 16px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px}
+.stat dt{font-size:.82rem;color:var(--muted);margin:0}
+.stat dd{margin:2px 0 0;font-weight:600}
+.stat small{display:block;font-weight:400;color:var(--muted)}
+.note{margin:0 0 12px}
+ul.rules,ul.plain{padding-left:20px;margin:0}
+ul.rules li{margin:0 0 8px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.card p{margin:0 0 10px;font-size:.93rem}
+pre{margin:0 0 10px;background:var(--code);border-radius:6px;padding:10px;overflow-x:auto;font:13px/1.5 ui-monospace,Consolas,monospace;white-space:pre-wrap;word-break:break-all}
+button,.btn{font:inherit;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--accent-fg);border-radius:6px;padding:6px 14px;min-height:40px}
+button.ghost{background:transparent;color:var(--accent)}
+form.search{display:flex;gap:8px;flex-wrap:wrap}
+input[type=search]{flex:1 1 220px;min-height:44px;font:inherit;padding:6px 10px;border:1px solid var(--muted);border-radius:6px;background:var(--card);color:var(--fg)}
+#results{list-style:none;padding:0;margin:16px 0 0}
+#results li{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;margin:0 0 10px}
+#results .t{font-weight:600;margin:0}
+#results .m{color:var(--muted);font-size:.88rem;margin:2px 0 6px}
+#results .s{margin:0 0 6px;font-size:.93rem}
+#results .w{color:var(--warn);font-size:.88rem;margin:0 0 6px}
+#status{margin:12px 0 0;min-height:1.5em}
+#status.err{color:var(--err);font-weight:600}
+footer{border-top:1px solid var(--line);padding:24px 0 40px;color:var(--muted);font-size:.93rem}
+footer p{margin:0 0 6px}
+.vh{position:absolute;left:-9999px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="hero">
+  <h1>Prawo PL – API dla modeli AI</h1>
+  <p class="sub">Polish law API for AI models</p>
+  <p class="lead">Obowiązujące akty z Dz.U. i M.P. oraz teksty ujednolicone, z wyszukiwaniem na poziomie artykułów. REST, MCP i OpenAPI – otwarte i bez klucza.</p>
+  <ul class="tags"><li>REST</li><li>MCP</li><li>OpenAPI</li><li>bez klucza</li></ul>
+</header>
+
+<main>
+<section id="freshness" aria-labelledby="h-fresh">
+  <h2 id="h-fresh">Aktualność danych</h2>
+  <p class="sub">Data freshness</p>
+  <p class="asof" id="asof">Stan danych na dzień 11.10.2026</p>
+  <dl class="grid">
+    <div class="stat"><dt>Najnowszy akt Dz.U.</dt><dd id="dzu">Dz.U. 2026 poz. 1307<small>ogłoszony 08.10.2026</small></dd></div>
+    <div class="stat"><dt>Najnowszy akt M.P.</dt><dd id="mp">M.P. 2026 poz. 977<small>ogłoszony 06.10.2026</small></dd></div>
+    <div class="stat"><dt>Dokumenty Dz.U.</dt><dd id="n-dzu">17&nbsp;737</dd></div>
+    <div class="stat"><dt>Dokumenty M.P.</dt><dd id="n-mp">2&nbsp;743</dd></div>
+    <div class="stat"><dt>Teksty ujednolicone</dt><dd id="n-cons">1&nbsp;688<small id="cons-latest">najnowszy: Dz.U. 2026 poz. 1070 (07.08.2026)</small></dd></div>
+  </dl>
+  <p class="note" id="cons-note"><strong>Teksty ujednolicone</strong> odzwierciedlają stan prawny na dzień ich sporządzenia; zmiany ogłoszone później mogą nie być w nich ujęte.</p>
+  <h3>Czego nie obejmuje</h3>
+  <ul class="plain" id="notcov">
+    <li>akty uchylone i wygasłe</li>
+    <li>prawo UE</li>
+    <li>orzecznictwo sądów (poza wyrokami TK ogłaszanymi w Dz.U.)</li>
+    <li>akty prawa miejscowego i dzienniki wojewódzkie</li>
+    <li>akty ogłoszone po dacie stanu danych</li>
+  </ul>
+  <p class="note" id="fresh-err" hidden style="margin-top:12px;color:var(--muted)">Nie udało się pobrać /data-info.json – widoczne są wartości domyślne.</p>
+</section>
+
+<section aria-labelledby="h-rules">
+  <h2 id="h-rules">Jak agenci AI powinni czytać prawo</h2>
+  <p class="sub">Rules for AI agents</p>
+  <ul class="rules">
+    <li>Zacznij od <code>search_law</code> z krótką frazą (2–4 słowa), nie całym pytaniem.</li>
+    <li>Dosłowne brzmienie weryfikuj przez <code>get_article</code> – wyszukiwanie zwraca tylko fragmenty.</li>
+    <li>Hierarchia źródeł: ujednolicone &gt; jednolite &gt; podstawowe (brzmienie z dnia ogłoszenia) &gt; zmieniające (nie są źródłem obowiązującej treści).</li>
+    <li>Nigdy nie zgaduj numerów artykułów ani treści przepisów; cytuj tylko to, co zwróciło API.</li>
+    <li>Zawsze podawaj <code>display_address</code>, numer art., kategorię i <code>source_url</code>.</li>
+    <li>Zawsze podawaj „stan danych na dzień …” (z <code>/data-info.json</code>).</li>
+    <li>Czytaj pole <code>warnings</code> i przekazuj je użytkownikowi; przy <code>truncated: true</code> nie zgaduj reszty tekstu.</li>
+    <li>Brak wyniku ≠ brak przepisu – spróbuj synonimów, mniej słów, innej kategorii.</li>
+    <li>Gdy odpowiedź zależy od daty zdarzenia lub rodzaju stosunku, dopytaj użytkownika.</li>
+    <li>To nie porada prawna – aktualne brzmienie weryfikuj w ISAP (isap.sejm.gov.pl).</li>
+  </ul>
+</section>
+
+<section aria-labelledby="h-connect">
+  <h2 id="h-connect">Jak podłączyć</h2>
+  <p class="sub">Connect your client</p>
+  <div class="cards">
+    <article class="card">
+      <h3>MCP</h3>
+      <p>Claude Code i inni klienci MCP (HTTP).</p>
+      <pre id="c-mcp">claude mcp add --transport http prawo-pl https://TWOJA-DOMENA.vercel.app/api/mcp</pre>
+      <button type="button" data-copy="c-mcp">Kopiuj</button>
+    </article>
+    <article class="card">
+      <h3>REST</h3>
+      <p>Wyszukiwanie i dosłowne brzmienie artykułu.</p>
+      <pre id="c-rest">curl -G "https://TWOJA-DOMENA.vercel.app/api/search" --data-urlencode "q=zadośćuczynienie art. 445"
+curl "https://TWOJA-DOMENA.vercel.app/api/article?id=DU/1964/93&amp;art=445"</pre>
+      <button type="button" data-copy="c-rest">Kopiuj</button>
+    </article>
+    <article class="card">
+      <h3>OpenAPI</h3>
+      <p>Schemat do Custom GPT Actions i innych narzędzi.</p>
+      <pre id="c-oa">https://TWOJA-DOMENA.vercel.app/openapi.json</pre>
+      <button type="button" data-copy="c-oa">Kopiuj</button>
+      <p style="margin:10px 0 0"><a href="/openapi.json">/openapi.json</a> · <a href="/llms.txt">/llms.txt</a></p>
+    </article>
+  </div>
+</section>
+
+<section aria-labelledby="h-try">
+  <h2 id="h-try">Wypróbuj</h2>
+  <p class="sub">Live demo of /api/search</p>
+  <form class="search" id="sform" role="search">
+    <label class="vh" for="q">Fraza do wyszukania</label>
+    <input type="search" id="q" name="q" placeholder="np. zadośćuczynienie art. 446" autocomplete="off" required>
+    <button type="submit">Szukaj</button>
+  </form>
+  <p id="status" role="status" aria-live="polite"></p>
+  <ul id="results"></ul>
+</section>
+</main>
+
+<footer>
+  <p>Narzędzie pomocnicze, nie porada prawna; aktualne brzmienie weryfikuj w ISAP (<a href="https://isap.sejm.gov.pl">isap.sejm.gov.pl</a>).</p>
+  <p>Źródło danych: <a href="https://api.sejm.gov.pl/eli">API ELI Sejmu RP</a>.</p>
+  <p><a href="https://github.com/TWOJ-LOGIN/prawo-pl">Repozytorium na GitHubie</a></p>
+</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  function $(id){return document.getElementById(id);}
+  function pl(iso){
+    var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(iso||"");
+    return m?m[3]+"."+m[2]+"."+m[1]:(iso||"");
+  }
+  function num(n){return typeof n==="number"?n.toLocaleString("pl-PL"):String(n);}
+  function stat(el,main,small){
+    el.textContent=main;
+    if(small){var s=document.createElement("small");s.textContent=small;el.appendChild(s);}
+  }
+
+  // Domena w snippetach
+  var origin=(location.protocol==="http:"||location.protocol==="https:")?location.origin:"https://TWOJA-DOMENA.vercel.app";
+  ["c-mcp","c-rest","c-oa"].forEach(function(id){
+    var el=$(id);el.textContent=el.textContent.split("https://TWOJA-DOMENA.vercel.app").join(origin);
+  });
+
+  // Kopiuj
+  document.querySelectorAll("button[data-copy]").forEach(function(b){
+    b.addEventListener("click",function(){
+      var text=$(b.getAttribute("data-copy")).textContent;
+      var done=function(ok){b.textContent=ok?"Skopiowano":"Zaznacz i skopiuj ręcznie";setTimeout(function(){b.textContent="Kopiuj";},1800);};
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){done(true);},function(){done(false);});
+      }else done(false);
+    });
+  });
+
+  // Aktualność danych
+  fetch("/data-info.json",{cache:"no-cache"}).then(function(r){
+    if(!r.ok)throw new Error(r.status);return r.json();
+  }).then(function(d){
+    if(d.data_as_of)$("asof").textContent="Stan danych na dzień "+pl(d.data_as_of);
+    if(d.dz_u){
+      stat($("dzu"),d.dz_u.latest_act||"–",d.dz_u.latest_promulgation_date?"ogłoszony "+pl(d.dz_u.latest_promulgation_date):"");
+      $("n-dzu").textContent=num(d.dz_u.documents);
+    }
+    if(d.m_p){
+      stat($("mp"),d.m_p.latest_act||"–",d.m_p.latest_promulgation_date?"ogłoszony "+pl(d.m_p.latest_promulgation_date):"");
+      $("n-mp").textContent=num(d.m_p.documents);
+    }
+    var c=d.consolidated_texts;
+    if(c){
+      stat($("n-cons"),num(c.documents),"najnowszy: "+(c.latest_act_with_consolidated_text||"–")+(c.latest_promulgation_date_among_them?" ("+pl(c.latest_promulgation_date_among_them)+")":""));
+      if(c.note){
+        var n=$("cons-note");n.textContent="";
+        var st=document.createElement("strong");st.textContent="Teksty ujednolicone: ";
+        n.appendChild(st);n.appendChild(document.createTextNode(c.note));
+      }
+    }
+    if(Array.isArray(d.not_covered)&&d.not_covered.length){
+      var ul=$("notcov");ul.textContent="";
+      d.not_covered.forEach(function(t){var li=document.createElement("li");li.textContent=t;ul.appendChild(li);});
+    }
+  }).catch(function(){$("fresh-err").hidden=false;});
+
+  // Demo
+  var status=$("status"),list=$("results");
+  function setStatus(t,err){status.textContent=t;status.className=err?"err":"";}
+  $("sform").addEventListener("submit",function(e){
+    e.preventDefault();
+    var q=$("q").value.trim();if(!q)return;
+    list.textContent="";setStatus("Szukam…",false);
+    fetch("/api/search?q="+encodeURIComponent(q)+"&limit=8",{headers:{"Accept":"application/json"}}).then(function(r){
+      return r.text().then(function(txt){
+        var j=null;try{j=JSON.parse(txt);}catch(_){}
+        if(!r.ok){
+          var msg=j&&j.error&&j.error.message?j.error.message:"";
+          var hint=r.status===401?"Brak dostępu (401) – to wdrożenie wymaga klucza API."
+            :r.status===429?"Zbyt wiele zapytań (429) – spróbuj za chwilę."
+            :r.status>=500?"Błąd serwera ("+r.status+") – baza danych może być niedostępna."
+            :"Błąd zapytania ("+r.status+").";
+          throw new Error(hint+(msg?" "+msg:""));
+        }
+        if(!j)throw new Error("Nieprawidłowa odpowiedź serwera.");
+        return j;
+      });
+    }).then(function(j){
+      var res=Array.isArray(j.results)?j.results:[];
+      if(!res.length){setStatus("Brak wyników. Pamiętaj: brak wyniku nie oznacza braku przepisu – spróbuj synonimów lub mniej słów.",false);return;}
+      setStatus("Wyniki: "+res.length,false);
+      res.forEach(function(x){
+        var li=document.createElement("li");
+        var t=document.createElement("p");t.className="t";t.textContent=x.title||"(bez tytułu)";li.appendChild(t);
+        var meta=[x.display_address,x.art?"art. "+x.art:(x.article?"art. "+x.article:""),x.kategoria].filter(Boolean).join(" · ");
+        if(meta){var m=document.createElement("p");m.className="m";m.textContent=meta;li.appendChild(m);}
+        if(x.snippet){var s=document.createElement("p");s.className="s";s.textContent=x.snippet;li.appendChild(s);}
+        if(Array.isArray(x.warnings))x.warnings.forEach(function(w){var p=document.createElement("p");p.className="w";p.textContent="Uwaga: "+w;li.appendChild(p);});
+        if(typeof x.source_url==="string"&&/^https?:\/\//i.test(x.source_url)){
+          var a=document.createElement("a");a.href=x.source_url;a.target="_blank";a.rel="noopener noreferrer";a.textContent="Źródło";li.appendChild(a);
+        }
+        list.appendChild(li);
+      });
+    }).catch(function(err){
+      setStatus(err&&err.message&&!/Failed to fetch|NetworkError/i.test(err.message)?err.message:"Nie udało się połączyć z API. Sprawdź połączenie lub spróbuj później.",true);
+    });
+  });
+})();
+</script>
+</body>
+</html>

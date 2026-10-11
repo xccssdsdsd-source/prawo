@@ -1,0 +1,22 @@
+# Prawo API – polskie przepisy (Dz.U., M.P.)
+
+> API do wyszukiwania i weryfikacji polskich aktów prawnych. Odpowiada tekstem źródłowym, nie interpretacją. To nie jest porada prawna.
+
+Dokumentacja maszynowa: /openapi.json (OpenAPI 3.1). Serwer MCP: /api/mcp (narzędzia search_law, get_article, get_act).
+Uwierzytelnianie: Authorization: Bearer <API_KEY> lub nagłówek x-api-key (poza /api/health).
+
+## Endpointy (GET, JSON)
+- /api/search?q=...&kategoria=...&act=DU/1964/93&limit=8 – wyszukiwanie. q może mieć postać "art. 445 kodeks cywilny" (dokładny artykuł będzie pierwszym wynikiem).
+- /api/article?id=DU/1964/93&art=445[&variant=U] – pełny tekst artykułu (preferowany tekst ujednolicony #U).
+- /api/act?id=DU/1964/93&include_toc=1 – metadane aktu i spis artykułów.
+- /api/health – stan usługi.
+
+## Zasady dla modeli
+1. Zawsze cytuj: display_address, numer artykułu, kategorię i source_url.
+2. Preferuj kategorie "ujednolicone", potem "jednolite". Ostrzegaj użytkownika, gdy źródłem jest akt zmieniający albo brzmienie z dnia ogłoszenia ("podstawowe"). Przekaż treść pola warnings.
+3. Nie wymyślaj numerów artykułów – zweryfikuj je przez /api/article (getArticle) przed zacytowaniem.
+4. To nie jest porada prawna; aktualność przepisów weryfikuj w ISAP (isap.sejm.gov.pl).
+5. Zakres: Dz.U. i M.P. obowiązujące (+ wyroki/UE, jeśli załadowane). Brak wyniku nie oznacza braku przepisu – spróbuj innych słów lub podaj art. i nazwę aktu.
+6. Orzeczenia, umowy i kategoria "inne" są domyślnie pomijane; użyj parametru kategoria, jeśli ich potrzebujesz, i pamiętaj, że nie są przepisami.
+7. Odpowiedź ze snippetem to tylko fragment – przed cytatem pobierz cały artykuł.
+8. Identyfikatory: eli = DU/1964/93; doc_id = eli albo eli#U (tekst ujednolicony; w URL # jako %23).

@@ -1,0 +1,20 @@
+{
+  "name": "prawo-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Prawo API dla modeli AI (Vercel Functions + Postgres)",
+  "engines": { "node": "20.x" },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@vercel/node": "^5.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}
