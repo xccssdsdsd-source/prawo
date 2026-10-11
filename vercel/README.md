@@ -1,6 +1,6 @@
 # Prawo API (Vercel + Postgres)
 
-Funkcje Vercel (Node 20, TypeScript, bez Next.js) udostępniające polskie przepisy modelom AI: `/api/search`, `/api/article`, `/api/act`, `/api/health`, `/api/mcp`, statyczne `/openapi.json` i `/llms.txt`. Kontrakt: `../docs/SPEC.md`.
+Funkcje Vercel (Node 24, TypeScript, bez Next.js) udostępniające polskie przepisy modelom AI: `/api/search`, `/api/article`, `/api/act`, `/api/health`, `/api/mcp`, statyczne `/openapi.json` i `/llms.txt`. Kontrakt: `../docs/SPEC.md`.
 
 ## Wdrożenie krok po kroku
 
