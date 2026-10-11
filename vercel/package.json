@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Prawo API dla modeli AI (Vercel Functions + Postgres)",
-  "engines": { "node": "20.x" },
+  "engines": { "node": "24.x" },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run"

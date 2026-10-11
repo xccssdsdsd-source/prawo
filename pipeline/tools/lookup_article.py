@@ -225,6 +225,11 @@ def upcoming(chunks_file: Path, only: set[str], from_date: str | None, out_path:
 
 # --------------------------------------------------------------------------- tryb 1
 def main(argv=None) -> int:
+    for _st in (sys.stdout, sys.stderr):  # konsola Windows (cp1250) nie zniesie np. indeksow gornych w --help
+        try:
+            _st.reconfigure(encoding="utf-8")
+        except Exception:
+            pass
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("doc_id", nargs="?", help="np. DU/1964/93#U (pomin przy uzyciu --query)")
     ap.add_argument("articles", nargs="*", help="numery artykulow, np. 118 46[1] albo paragrafy §158")
