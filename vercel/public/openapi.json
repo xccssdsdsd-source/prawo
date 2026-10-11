@@ -3,10 +3,19 @@
   "info": {
     "title": "Prawo API – polskie przepisy (Dz.U., M.P.)",
     "version": "1.0.0",
-    "description": "Wyszukiwanie i pobieranie polskich aktów prawnych (Dz.U. i M.P.) z cytowaniem źródła. Narzędzie do weryfikacji przepisów – nie jest poradą prawną. / Search and retrieve Polish legislation with source citations. Not legal advice.\n\nZasady: cytuj display_address, numer artykułu, kategorię i source_url; preferuj kategorie ujednolicone/jednolite; nie wymyślaj numerów artykułów – weryfikuj przez getArticle; brak wyniku nie oznacza braku przepisu; aktualność sprawdzaj w ISAP."
+    "description": "API PUBLICZNE i OTWARTE – nie wymaga klucza (klucz jest opcjonalny: jeśli operator go włączył, podaj Authorization: Bearer lub x-api-key). Wyszukiwanie i pobieranie polskich aktów prawnych (Dz.U. i M.P.) z cytowaniem źródła. Narzędzie do weryfikacji przepisów – nie jest poradą prawną. / Search and retrieve Polish legislation with source citations. Not legal advice.\n\nZasady: cytuj display_address, numer artykułu, kategorię i source_url; preferuj kategorie ujednolicone/jednolite; nie wymyślaj numerów artykułów – weryfikuj przez getArticle; brak wyniku nie oznacza braku przepisu; aktualność sprawdzaj w ISAP.\n\nW każdej odpowiedzi podaj stan danych: pole data_as_of (YYYY-MM-DD, także nagłówek X-Data-As-Of). Limity: ok. 60 żądań/min/IP dla search i 120 dla article/act; nagłówki X-RateLimit-Limit/Remaining/Reset, po przekroczeniu 429 z Retry-After."
   },
-  "servers": [{ "url": "/" }],
-  "security": [{ "bearerAuth": [] }],
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "security": [
+    {},
+    {
+      "bearerAuth": []
+    }
+  ],
   "paths": {
     "/api/search": {
       "get": {
@@ -14,15 +23,114 @@
         "summary": "Szukaj w przepisach / Search Polish law",
         "description": "Wyszukiwanie pełnotekstowe po fragmentach aktów. Zapytanie typu „art. 445 kodeks cywilny” zwraca dokładny artykuł jako pierwszy wynik. Domyślnie pomija kategorie orzeczenie, umowa, inne.",
         "parameters": [
-          { "name": "q", "in": "query", "required": true, "schema": { "type": "string", "maxLength": 300 }, "description": "Zapytanie: słowa kluczowe lub „art. N nazwa aktu”. / Keywords or 'art. N act name'.", "examples": { "artykul": { "value": "art. 445 kodeks cywilny" }, "slowa": { "value": "zadośćuczynienie za krzywdę" } } },
-          { "name": "kategoria", "in": "query", "schema": { "$ref": "#/components/schemas/Kategoria" }, "description": "Ogranicz do kategorii. Bez parametru: wykluczone orzeczenie, umowa, inne. / Restrict to a category." },
-          { "name": "act", "in": "query", "schema": { "type": "string", "pattern": "^[A-Za-z]+/\\d{4}/\\d+(#U)?$" }, "description": "Ogranicz do aktu (ELI), np. DU/1964/93. / Restrict to one act (ELI).", "example": "DU/1964/93" },
-          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 20, "default": 8 }, "description": "Liczba wyników 1–20. / Number of results." }
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 300
+            },
+            "description": "Zapytanie: słowa kluczowe lub „art. N nazwa aktu”. / Keywords or 'art. N act name'.",
+            "examples": {
+              "artykul": {
+                "value": "art. 445 kodeks cywilny"
+              },
+              "slowa": {
+                "value": "zadośćuczynienie za krzywdę"
+              }
+            }
+          },
+          {
+            "name": "kategoria",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Kategoria"
+            },
+            "description": "Ogranicz do kategorii. Bez parametru: wykluczone orzeczenie, umowa, inne. / Restrict to a category."
+          },
+          {
+            "name": "act",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z]+/\\d{4}/\\d+(#U)?$"
+            },
+            "description": "Ogranicz do aktu (ELI), np. DU/1964/93. / Restrict to one act (ELI).",
+            "example": "DU/1964/93"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20,
+              "default": 8
+            },
+            "description": "Liczba wyników 1–20. / Number of results."
+          }
         ],
         "responses": {
-          "200": { "description": "Wyniki", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SearchResponse" } } } },
-          "400": { "$ref": "#/components/responses/Error" },
-          "401": { "$ref": "#/components/responses/Error" }
+          "200": {
+            "description": "Wyniki",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-RateLimit-Limit": {
+                "description": "Limit żądań na minutę (best-effort, per instancja)",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "Pozostałe żądania w oknie",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix time resetu okna",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-Data-As-Of": {
+                "description": "Stan danych (YYYY-MM-DD)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "description": "Przekroczono limit żądań (nagłówek Retry-After).",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -32,15 +140,101 @@
         "summary": "Pobierz pełny artykuł / Get full article text",
         "description": "Zwraca pełny tekst artykułu (do 12 000 znaków, flaga truncated). Użyj do weryfikacji numeru artykułu przed zacytowaniem. Bez variant preferowany jest tekst ujednolicony (#U).",
         "parameters": [
-          { "name": "id", "in": "query", "required": true, "schema": { "type": "string" }, "description": "ELI aktu lub doc_id, np. DU/1964/93 lub DU/1964/93#U (# jako %23). / Act ELI or doc_id.", "example": "DU/1964/93" },
-          { "name": "art", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Numer artykułu, np. 445, 3a, 46[1]. / Article number.", "example": "445" },
-          { "name": "variant", "in": "query", "schema": { "type": "string", "enum": ["U"] }, "description": "U = wymuś tekst ujednolicony. / U = force consolidated text." }
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ELI aktu lub doc_id, np. DU/1964/93 lub DU/1964/93#U (# jako %23). / Act ELI or doc_id.",
+            "example": "DU/1964/93"
+          },
+          {
+            "name": "art",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Numer artykułu, np. 445, 3a, 46[1]. / Article number.",
+            "example": "445"
+          },
+          {
+            "name": "variant",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "U"
+              ]
+            },
+            "description": "U = wymuś tekst ujednolicony. / U = force consolidated text."
+          }
         ],
         "responses": {
-          "200": { "description": "Artykuł", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Article" } } } },
-          "400": { "$ref": "#/components/responses/Error" },
-          "401": { "$ref": "#/components/responses/Error" },
-          "404": { "$ref": "#/components/responses/Error" }
+          "200": {
+            "description": "Artykuł",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Article"
+                }
+              }
+            },
+            "headers": {
+              "X-RateLimit-Limit": {
+                "description": "Limit żądań na minutę (best-effort, per instancja)",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "Pozostałe żądania w oknie",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix time resetu okna",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-Data-As-Of": {
+                "description": "Stan danych (YYYY-MM-DD)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "description": "Przekroczono limit żądań (nagłówek Retry-After).",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -49,15 +243,102 @@
         "operationId": "getAct",
         "summary": "Metadane aktu i spis artykułów / Act metadata and table of contents",
         "parameters": [
-          { "name": "id", "in": "query", "required": true, "schema": { "type": "string" }, "description": "ELI lub doc_id aktu. / Act ELI or doc_id.", "example": "DU/1964/93" },
-          { "name": "variant", "in": "query", "schema": { "type": "string", "enum": ["U"] }, "description": "U = tekst ujednolicony." },
-          { "name": "include_toc", "in": "query", "schema": { "type": "string", "enum": ["1"] }, "description": "1 = dołącz listę artykułów (articles). / 1 = include article list." }
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ELI lub doc_id aktu. / Act ELI or doc_id.",
+            "example": "DU/1964/93"
+          },
+          {
+            "name": "variant",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "U"
+              ]
+            },
+            "description": "U = tekst ujednolicony."
+          },
+          {
+            "name": "include_toc",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            },
+            "description": "1 = dołącz listę artykułów (articles). / 1 = include article list."
+          }
         ],
         "responses": {
-          "200": { "description": "Akt", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Act" } } } },
-          "400": { "$ref": "#/components/responses/Error" },
-          "401": { "$ref": "#/components/responses/Error" },
-          "404": { "$ref": "#/components/responses/Error" }
+          "200": {
+            "description": "Akt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Act"
+                }
+              }
+            },
+            "headers": {
+              "X-RateLimit-Limit": {
+                "description": "Limit żądań na minutę (best-effort, per instancja)",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "Pozostałe żądania w oknie",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix time resetu okna",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-Data-As-Of": {
+                "description": "Stan danych (YYYY-MM-DD)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "description": "Przekroczono limit żądań (nagłówek Retry-After).",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -67,60 +348,342 @@
         "summary": "Stan usługi (publiczny) / Service health",
         "security": [],
         "responses": {
-          "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "object", "properties": { "ok": { "type": "boolean" }, "db": { "type": "boolean" }, "documents": { "type": "integer" }, "chunks": { "type": "integer" }, "version": { "type": "string" } } } } } }
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "db": {
+                      "type": "boolean"
+                    },
+                    "documents": {
+                      "type": "integer"
+                    },
+                    "chunks": {
+                      "type": "integer"
+                    },
+                    "version": {
+                      "type": "string"
+                    },
+                    "data_as_of": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "data_info": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "description": "Zawartość data-info.json: zakres, liczby dokumentów, ostrzeżenia."
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-Data-As-Of": {
+                "description": "Stan danych (YYYY-MM-DD)",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
         }
       }
     }
   },
   "components": {
     "securitySchemes": {
-      "bearerAuth": { "type": "http", "scheme": "bearer", "description": "Authorization: Bearer <API_KEY> (alternatywnie nagłówek x-api-key)." }
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Authorization: Bearer <API_KEY> (alternatywnie nagłówek x-api-key)."
+      }
     },
     "responses": {
-      "Error": { "description": "Błąd", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+      "Error": {
+        "description": "Błąd",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
     },
     "schemas": {
-      "Kategoria": { "type": "string", "enum": ["ujednolicone", "jednolite", "podstawowe", "zmieniajace", "mp", "orzeczenie", "umowa", "inne", "wyrok", "ue"] },
-      "Error": { "type": "object", "required": ["error"], "properties": { "error": { "type": "object", "required": ["code", "message"], "properties": { "code": { "type": "string", "examples": ["unauthorized"] }, "message": { "type": "string" } } } } },
+      "Kategoria": {
+        "type": "string",
+        "enum": [
+          "ujednolicone",
+          "jednolite",
+          "podstawowe",
+          "zmieniajace",
+          "mp",
+          "orzeczenie",
+          "umowa",
+          "inne",
+          "wyrok",
+          "ue"
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "examples": [
+                  "unauthorized"
+                ]
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
       "SearchResult": {
         "type": "object",
         "properties": {
-          "doc_id": { "type": "string", "examples": ["DU/1964/93#U"] },
-          "eli": { "type": "string", "examples": ["DU/1964/93"] },
-          "title": { "type": "string" },
-          "display_address": { "type": ["string", "null"], "examples": ["Dz.U. 1964 nr 16 poz. 93"] },
-          "kategoria": { "$ref": "#/components/schemas/Kategoria" },
-          "is_consolidated": { "type": "boolean" },
-          "article": { "type": ["string", "null"], "examples": ["445"] },
-          "heading": { "type": ["string", "null"] },
-          "snippet": { "type": "string" },
-          "score": { "type": "number" },
-          "source_url": { "type": ["string", "null"] },
-          "warnings": { "type": "array", "items": { "type": "string" }, "description": "Ostrzeżenia, które należy przekazać użytkownikowi. / Caveats to relay to the user." }
+          "doc_id": {
+            "type": "string",
+            "examples": [
+              "DU/1964/93#U"
+            ]
+          },
+          "eli": {
+            "type": "string",
+            "examples": [
+              "DU/1964/93"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "display_address": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "examples": [
+              "Dz.U. 1964 nr 16 poz. 93"
+            ]
+          },
+          "kategoria": {
+            "$ref": "#/components/schemas/Kategoria"
+          },
+          "is_consolidated": {
+            "type": "boolean"
+          },
+          "article": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "examples": [
+              "445"
+            ]
+          },
+          "heading": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "snippet": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number"
+          },
+          "source_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Ostrzeżenia, które należy przekazać użytkownikowi. / Caveats to relay to the user."
+          }
         }
       },
       "SearchResponse": {
         "type": "object",
-        "properties": { "query": { "type": "string" }, "count": { "type": "integer" }, "results": { "type": "array", "items": { "$ref": "#/components/schemas/SearchResult" } } }
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SearchResult"
+            }
+          },
+          "data_as_of": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Stan danych na dzień (YYYY-MM-DD)"
+          }
+        }
       },
       "Article": {
         "type": "object",
         "properties": {
-          "doc_id": { "type": "string" }, "title": { "type": "string" }, "display_address": { "type": ["string", "null"] },
-          "article": { "type": "string" }, "heading": { "type": ["string", "null"] }, "text": { "type": "string" },
-          "source_url": { "type": ["string", "null"] }, "warnings": { "type": "array", "items": { "type": "string" } },
-          "truncated": { "type": "boolean" }
+          "doc_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "display_address": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "article": {
+            "type": "string"
+          },
+          "heading": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "text": {
+            "type": "string"
+          },
+          "source_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "data_as_of": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Stan danych na dzień (YYYY-MM-DD)"
+          }
         }
       },
       "Act": {
         "type": "object",
         "properties": {
-          "doc_id": { "type": "string" }, "eli": { "type": "string" }, "title": { "type": "string" },
-          "display_address": { "type": ["string", "null"] }, "kategoria": { "$ref": "#/components/schemas/Kategoria" },
-          "is_consolidated": { "type": "boolean" }, "status": { "type": ["string", "null"] },
-          "announcement_date": { "type": ["string", "null"] }, "source_url": { "type": ["string", "null"] },
-          "n_chunks": { "type": ["integer", "null"] }, "warnings": { "type": "array", "items": { "type": "string" } },
-          "articles": { "type": "array", "items": { "type": "object", "properties": { "article": { "type": "string" }, "heading": { "type": ["string", "null"] } } } }
+          "doc_id": {
+            "type": "string"
+          },
+          "eli": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "display_address": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kategoria": {
+            "$ref": "#/components/schemas/Kategoria"
+          },
+          "is_consolidated": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "announcement_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "n_chunks": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "articles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "article": {
+                  "type": "string"
+                },
+                "heading": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          },
+          "data_as_of": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Stan danych na dzień (YYYY-MM-DD)"
+          }
         }
       }
     }

@@ -2,8 +2,11 @@
 
 > API do wyszukiwania i weryfikacji polskich aktów prawnych. Odpowiada tekstem źródłowym, nie interpretacją. To nie jest porada prawna.
 
+REGUŁA: W każdej odpowiedzi podaj: "stan danych na dzień <data_as_of>" (pole data_as_of w odpowiedzi lub nagłówek X-Data-As-Of).
+
+API jest publiczne i otwarte – nie wymaga klucza. (Tylko jeśli operator włączył klucz: Authorization: Bearer <klucz> lub x-api-key.) Limity: ok. 60 żądań/min/IP dla search, 120 dla article/act; po przekroczeniu HTTP 429 z Retry-After.
+
 Dokumentacja maszynowa: /openapi.json (OpenAPI 3.1). Serwer MCP: /api/mcp (narzędzia search_law, get_article, get_act).
-Uwierzytelnianie: Authorization: Bearer <API_KEY> lub nagłówek x-api-key (poza /api/health).
 
 ## Endpointy (GET, JSON)
 - /api/search?q=...&kategoria=...&act=DU/1964/93&limit=8 – wyszukiwanie. q może mieć postać "art. 445 kodeks cywilny" (dokładny artykuł będzie pierwszym wynikiem).

@@ -9,6 +9,8 @@ export interface Deps {
   searchLaw: (o: { q: string; kategoria?: string; act?: string; limit: number }) => Promise<any>;
   getArticle: (o: { id?: string; art?: string; variant?: string }) => Promise<any>;
   getAct: (o: { id?: string; variant?: string; include_toc?: boolean }) => Promise<any>;
+  /** Data stanu danych (YYYY-MM-DD) – dopisywana do każdej odpowiedzi narzędzia. */
+  dataAsOf?: string | null;
 }
 
 const KATEGORIE = ['ujednolicone', 'jednolite', 'podstawowe', 'zmieniajace', 'mp', 'orzeczenie', 'umowa', 'inne', 'wyrok', 'ue'];
@@ -131,7 +133,11 @@ async function callTool(deps: Deps, name: string, args: any) {
     else if (name === 'get_article') r = await getArticle(deps, args || {});
     else if (name === 'get_act') r = await getAct(deps, args || {});
     else return { __rpcError: { code: -32602, message: `Unknown tool: ${name}` } };
-    return { content: [{ type: 'text', text: r.text }], structuredContent: r.data };
+    const asOf = deps.dataAsOf ?? null;
+    const stan = asOf ? `
+
+Stan danych na dzień ${asOf.split('-').reverse().join('.')} – przepisy ogłoszone później nie są uwzględnione; teksty ujednolicone mogą być starsze. Zweryfikuj w ISAP.` : '';
+    return { content: [{ type: 'text', text: r.text + stan }], structuredContent: { ...r.data, data_as_of: asOf } };
   } catch (e: any) {
     const msg = e instanceof ToolError ? e.message : 'Internal tool error: ' + (e?.message || String(e));
     return { content: [{ type: 'text', text: msg }], structuredContent: { error: { code: e instanceof ToolError ? 'bad_request' : 'internal', message: msg } }, isError: true };

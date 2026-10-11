@@ -1,10 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { checkAuth } from '../lib/auth';
 import { searchLaw, getArticle, getAct } from '../lib/law';
+import { dataAsOf } from '../lib/datainfo';
 import { handleHttp } from '../lib/mcp';
 import { applyRateLimit } from '../lib/ratelimit';
 
-const deps = { searchLaw, getArticle, getAct } as any;
+const deps = { searchLaw, getArticle, getAct, dataAsOf } as any;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const method = (req.method || 'GET').toUpperCase();

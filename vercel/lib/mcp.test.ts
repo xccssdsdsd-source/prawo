@@ -64,6 +64,11 @@ describe('MCP JSON-RPC', () => {
     const boom = { ...mk(), searchLaw: async () => { throw new Error('db down'); } };
     expect((await call('search_law', { query: 'x' }, boom)).result.isError).toBe(true);
   });
+  it('dopisuje stan danych do tekstu i structuredContent', async () => {
+    const r = await call('search_law', { query: 'szkoda' }, { ...mk(), dataAsOf: '2026-10-11' });
+    expect(r.result.structuredContent.data_as_of).toBe('2026-10-11');
+    expect(r.result.content[0].text).toContain('Stan danych na dzień 11.10.2026');
+  });
   it('get_article', async () => {
     const r = await call('get_article', { id: 'DU/1964/93', art: '445' });
     expect(r.result.structuredContent.doc_id).toBe('DU/1964/93#U');
