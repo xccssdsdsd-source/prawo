@@ -30,12 +30,60 @@
     "mp": 2743,
     "ujednolicone": 1688
   },
+  "sources": [
+    {
+      "id": "eli-du",
+      "nazwa": "Dziennik Ustaw (ISAP / API ELI Sejmu)",
+      "status": "aktywne",
+      "enabled": true,
+      "count": 17737,
+      "newest_date": "2026-10-08",
+      "opis": "Akty prawne ogłoszone w Dzienniku Ustaw: teksty ogłoszone obowiązujące (HTML/PDF) oraz metadane z api.sejm.gov.pl/eli. Obsługiwane przez pipeline/update_data.py."
+    },
+    {
+      "id": "eli-mp",
+      "nazwa": "Monitor Polski (ISAP / API ELI Sejmu)",
+      "status": "aktywne",
+      "enabled": true,
+      "count": 2743,
+      "newest_date": "2026-10-06",
+      "opis": "Akty ogłoszone w Monitorze Polskim (uchwały, zarządzenia, obwieszczenia) z api.sejm.gov.pl/eli. Obsługiwane przez pipeline/update_data.py."
+    },
+    {
+      "id": "isap-ujednolicone",
+      "nazwa": "Teksty ujednolicone (ISAP)",
+      "status": "aktywne",
+      "enabled": true,
+      "count": 1688,
+      "newest_date": "2026-08-07",
+      "opis": "Teksty jednolite/ujednolicone ustaw i rozporządzeń (PDF typu U) z api.sejm.gov.pl/eli. Wersja preferowana przez API. Obsługiwane przez pipeline/update_data.py."
+    },
+    {
+      "id": "saos",
+      "nazwa": "SAOS – orzeczenia sądów",
+      "status": "uśpione",
+      "enabled": false,
+      "count": null,
+      "newest_date": null,
+      "opis": "System Analizy Orzeczeń Sądowych (ICM UW): orzeczenia sądów powszechnych, Sądu Najwyższego, sądów administracyjnych, Trybunału Konstytucyjnego i KIO. Fetcher przyrostowy po sinceModificationDate; tekst dzielony na fragmenty ~2000 znaków, kategoria 'wyrok', doc_id SAOS/<id>."
+    },
+    {
+      "id": "eurlex",
+      "nazwa": "Prawo UE po polsku (Publications Office / Cellar)",
+      "status": "uśpione",
+      "enabled": false,
+      "count": null,
+      "newest_date": null,
+      "opis": "Akty prawa UE (rozporządzenia, dyrektywy, wybrane artykuły traktatów) po numerze CELEX z publications.europa.eu, w polskiej wersji językowej. Lista 44 zweryfikowanych aktów w zrodla/eurlex/seed.json; podział na 'Artykuł N'."
+    }
+  ],
+  "last_update_run": null,
   "not_covered": [
     "akty uchylone i wygasłe",
     "prawo UE",
     "orzecznictwo sądów (poza wyrokami TK ogłaszanymi w Dz.U.)",
     "akty prawa miejscowego i dzienniki wojewódzkie",
-    "akty ogłoszone po dacie data_as_of"
+    "akty ogłoszone po dacie stanu danych"
   ],
   "legal_notice": "Narzędzie pomocnicze, nie porada prawna. Aktualne brzmienie przepisu zawsze zweryfikuj w ISAP (isap.sejm.gov.pl).",
   "indexed_chunks_file_mb": 955.6

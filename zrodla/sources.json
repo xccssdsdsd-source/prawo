@@ -1,0 +1,83 @@
+[
+  {
+    "id": "eli-du",
+    "nazwa": "Dziennik Ustaw (ISAP / API ELI Sejmu)",
+    "opis": "Akty prawne ogłoszone w Dzienniku Ustaw: teksty ogłoszone obowiązujące (HTML/PDF) oraz metadane z api.sejm.gov.pl/eli. Obsługiwane przez pipeline/update_data.py.",
+    "enabled": true,
+    "kategoria": "podstawowe, zmieniajace, jednolite (wg kategorie.py)",
+    "skrypt": null,
+    "wyjscie": "pipeline/out/chunks.jsonl",
+    "zakres": "Dz.U. 1918–2026, tylko status 'obowiązujący'; rejestr: dane/indeks_obowiazujacych.json",
+    "licencja": "Urzędowe teksty aktów prawnych nie są objęte prawem autorskim (art. 4 pkt 2 ustawy o prawie autorskim – wiedza ogólna, do weryfikacji); regulaminu API Sejmu nie odczytano.",
+    "status": "aktywne"
+  },
+  {
+    "id": "eli-mp",
+    "nazwa": "Monitor Polski (ISAP / API ELI Sejmu)",
+    "opis": "Akty ogłoszone w Monitorze Polskim (uchwały, zarządzenia, obwieszczenia) z api.sejm.gov.pl/eli. Obsługiwane przez pipeline/update_data.py.",
+    "enabled": true,
+    "kategoria": "mp",
+    "skrypt": null,
+    "wyjscie": "pipeline/out/chunks.jsonl",
+    "zakres": "M.P., tylko status 'obowiązujący'; rejestr: dane/indeks_mp.json",
+    "licencja": "Jak eli-du: urzędowe teksty aktów prawnych (art. 4 pkt 2 pr. aut. – wiedza ogólna, do weryfikacji); regulaminu API Sejmu nie odczytano.",
+    "status": "aktywne"
+  },
+  {
+    "id": "isap-ujednolicone",
+    "nazwa": "Teksty ujednolicone (ISAP)",
+    "opis": "Teksty jednolite/ujednolicone ustaw i rozporządzeń (PDF typu U) z api.sejm.gov.pl/eli. Wersja preferowana przez API. Obsługiwane przez pipeline/update_data.py.",
+    "enabled": true,
+    "kategoria": "ujednolicone",
+    "skrypt": null,
+    "wyjscie": "pipeline/out/chunks.jsonl",
+    "zakres": "Dz.U. o statusie 'obowiązujący' lub 'akt posiada tekst jednolity'; rejestr: dane/indeks_ujednolicone.json",
+    "licencja": "Tekst ujednolicony ma charakter informacyjny (urzędowy jest tekst ogłoszony w Dz.U./M.P.); status prawny do weryfikacji w ISAP.",
+    "status": "aktywne"
+  },
+  {
+    "id": "saos",
+    "nazwa": "SAOS – orzeczenia sądów",
+    "opis": "System Analizy Orzeczeń Sądowych (ICM UW): orzeczenia sądów powszechnych, Sądu Najwyższego, sądów administracyjnych, Trybunału Konstytucyjnego i KIO. Fetcher przyrostowy po sinceModificationDate; tekst dzielony na fragmenty ~2000 znaków, kategoria 'wyrok', doc_id SAOS/<id>.",
+    "enabled": false,
+    "kategoria": "wyrok",
+    "skrypt": "zrodla/saos/fetch.py",
+    "wyjscie": "pipeline/out/chunks_saos.jsonl",
+    "zakres": "Domyślnie SN, sądy administracyjne, TK i KIO (opcje.typy_sadow); sądy powszechne po dodaniu COMMON (bardzo dużo danych). Dump SAOS nie ma filtra po rodzaju sądu – filtrowanie po stronie klienta.",
+    "licencja": "Brak informacji o licencji i limitach w dokumentacji SAOS. robots.txt SAOS: 'Disallow: /api/' (sprzeczne z dokumentacją API) – przed włączeniem potwierdź warunki z operatorem SAOS. Orzeczenia anonimizowane przez sądy źródłowe.",
+    "status": "uśpione",
+    "opcje": {
+      "typy_sadow": [
+        "SUPREME",
+        "ADMINISTRATIVE",
+        "CONSTITUTIONAL_TRIBUNAL",
+        "NATIONAL_APPEAL_CHAMBER"
+      ],
+      "okno_poczatkowe_dni": 30,
+      "rozmiar_strony": 100,
+      "opoznienie_s": 3.0,
+      "max_stron": 100,
+      "max_znakow_orzeczenia": 150000,
+      "max_ponowien_na_przebieg": 30
+    },
+    "stan": "stan/zrodlo_saos.json",
+    "uwagi": "Orzeczenia SN, NSA/WSA i TK pobieramy wyłącznie pośrednio przez SAOS – własne serwisy tych instytucji nie mają publicznego API (patrz zrodla/niedostepne.json). Stan z 2026-10-11: usługa SAOS bywa niedostępna (HTTP 200 z HTML 'Przerwa techniczna'); fetcher to wykrywa i kończy kodem 3."
+  },
+  {
+    "id": "eurlex",
+    "nazwa": "Prawo UE po polsku (Publications Office / Cellar)",
+    "opis": "Akty prawa UE (rozporządzenia, dyrektywy, wybrane artykuły traktatów) po numerze CELEX z publications.europa.eu, w polskiej wersji językowej. Lista 44 zweryfikowanych aktów w zrodla/eurlex/seed.json; podział na 'Artykuł N'.",
+    "enabled": false,
+    "kategoria": "ue",
+    "skrypt": "zrodla/eurlex/fetch.py",
+    "wyjscie": "pipeline/out/chunks_eurlex.jsonl",
+    "zakres": "44 akty z seed.json (ochrona danych, prawa konsumentów, prawo prywatne międzynarodowe, DSA/DMA/AI Act, spółki i finanse); dodatkowe przez --celex lub dopisanie do seed.json; nowości: --odkryj (SPARQL).",
+    "licencja": "Ponowne wykorzystanie na podstawie decyzji Komisji 2011/833/UE (wg źródeł wtórnych zasadniczo CC BY 4.0 – nie potwierdzono na stronie 'legal notice' EUR-Lex); wymagane wskazanie źródła. Tekst z Dz.Urz. UE (CELEX 3…) jest oryginałem, nie tekstem ujednoliconym.",
+    "status": "uśpione",
+    "opcje": {
+      "odswiez_po_dniach": 90
+    },
+    "stan": "stan/zrodlo_eurlex.json",
+    "uwagi": "Pobieranie wyłącznie z publications.europa.eu – strona eur-lex.europa.eu jest za AWS WAF (HTTP 202 challenge) i nie nadaje się do skryptów."
+  }
+]

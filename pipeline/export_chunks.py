@@ -5,6 +5,9 @@ Ekstraktor PDF: PyMuPDF (pymupdf) - poprawne polskie znaki, ~15x szybszy od pypd
 Użycie:
   python pipeline/export_chunks.py [--resume] [--kategorie ujednolicone,jednolite,...]
                                    [--limit N] [--workers N] [--out PLIK] [--doc DU/1964/93#U,...]
+  python pipeline/export_chunks.py --changed stan/zmiany.json [--out PLIK] [--dane DIR]
+      tryb przyrostowy: usuwa z --out wiersze changed+removed, eksportuje added+changed, dopisuje atomowo
+      (plik tymczasowy + os.replace) i zapisuje chunks_delta.jsonl (tylko nowe wiersze) obok --out.
 """
 import argparse
 import html as htmlmod
@@ -30,10 +33,11 @@ ELI_API = "https://api.sejm.gov.pl/eli/acts"
 # ----------------------------------------------------------------- metadane
 
 
-def load_meta():
+def load_meta(dane=None):
+    dane = Path(dane) if dane else DANE
     meta = {}  # (eli, wariant) -> rekord
     for fn in ("indeks_obowiazujacych.json", "indeks_mp.json", "indeks_ujednolicone.json"):
-        p = DANE / fn
+        p = dane / fn
         if not p.exists():
             continue
         for a in json.loads(p.read_text(encoding="utf-8")):
@@ -51,10 +55,12 @@ def file_key(name):
     return (f"{pub}/{y}/{pos}", "U" if u else "", ext)
 
 
-def list_docs(meta, kategorie):
-    """-> lista (doc_id, eli, wariant, sciezka, kategoria, rekord). Jedna pozycja na doc_id (HTML przed PDF)."""
+def list_docs(meta, kategorie, dane=None):
+    """-> lista (doc_id, eli, wariant, sciezka, kategoria, rekord). Jedna pozycja na doc_id (HTML przed PDF).
+    Katalogi zaczynajace sie od '_' (np. _wycofane) sa pomijane - to nie sa akty obowiazujace."""
     best = {}
-    for d in sorted(p for p in DANE.iterdir() if p.is_dir()):
+    dane = Path(dane) if dane else DANE
+    for d in sorted(p for p in dane.iterdir() if p.is_dir() and not p.name.startswith("_")):
         for f in d.iterdir():
             k = file_key(f.name)
             if not k:
@@ -438,7 +444,166 @@ def pick_sample(docs, limit, must):
     return sel
 
 
-def main():
+# ----------------------------------------------------------------- tryb przyrostowy (--changed)
+
+_DOCID_RE = re.compile(rb'\{"doc_id": ?"([^"]+)"')
+
+
+def load_changes(path):
+    """Czyta stan/zmiany.json -> (added, changed, removed) jako listy doc_id (bez duplikatow, kolejnosc zachowana)."""
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError(f"{path}: oczekiwano obiektu JSON z kluczami added/changed/removed")
+
+    def lst(k):
+        v = data.get(k) or []
+        if not isinstance(v, list):
+            raise ValueError(f"{path}: pole '{k}' musi byc lista")
+        return list(dict.fromkeys(str(x) for x in v))
+
+    return lst("added"), lst("changed"), lst("removed")
+
+
+def _line_doc_id(raw):
+    m = _DOCID_RE.match(raw)
+    if m:
+        return m.group(1).decode("utf-8")
+    try:  # inna kolejnosc kluczy / spacje - pelny parse
+        return json.loads(raw.decode("utf-8")).get("doc_id")
+    except Exception:
+        return None
+
+
+def rewrite_chunks(out, drop_ids, delta_path):
+    """Atomowo: out := out bez wierszy doc_id z drop_ids + zawartosc delta_path.
+    Zapis do pliku tymczasowego obok, fsync, os.replace. Zwraca (usuniete_wiersze, dopisane_wiersze, ucieta_niepelna_linia)."""
+    out = Path(out)
+    tmp = out.with_name(out.name + ".tmp")
+    removed = added = 0
+    truncated = False
+    try:
+        with open(tmp, "wb") as fo:
+            if out.exists():
+                with open(out, "rb") as fi:
+                    for raw in fi:
+                        if not raw.endswith(b"\n"):
+                            truncated = True  # niepelna ostatnia linia (przerwany zapis) - odrzucamy
+                            break
+                        if drop_ids and _line_doc_id(raw) in drop_ids:
+                            removed += 1
+                            continue
+                        fo.write(raw)
+            if delta_path and Path(delta_path).exists():
+                with open(delta_path, "rb") as fd:
+                    for raw in fd:
+                        if not raw.endswith(b"\n"):
+                            raw += b"\n"
+                        fo.write(raw)
+                        added += 1
+            fo.flush()
+            os.fsync(fo.fileno())
+        os.replace(tmp, out)
+    except BaseException:
+        if tmp.exists():
+            tmp.unlink()
+        raise
+    return removed, added, truncated
+
+
+def _update_list_file(path, drop_ids, new_entries):
+    """Plik 'doc_id<TAB>info' (bez_tekstu.txt / bledy.txt): zwraca wpisy bez drop_ids plus new_entries."""
+    path = Path(path)
+    old = []
+    if path.exists():
+        old = [l for l in path.read_text(encoding="utf-8").splitlines() if l.strip()]
+    keep = [l for l in old if l.split("\t")[0] not in drop_ids]
+    return keep + list(new_entries)
+
+
+def main_changed(a):
+    t0 = time.time()
+    out = Path(a.out)
+    outdir = out.parent
+    outdir.mkdir(parents=True, exist_ok=True)
+    dane = Path(a.dane) if a.dane else DANE
+    added, changed, removed = load_changes(a.changed)
+    to_export = list(dict.fromkeys(added + changed))
+    print(f"zmiany: added={len(added)} changed={len(changed)} removed={len(removed)}", flush=True)
+    kat = {k.strip() for k in a.kategorie.split(",") if k.strip()}
+    meta = load_meta(dane)
+    avail = {d[0]: d for d in list_docs(meta, kat, dane)} if to_export else {}
+    missing = [i for i in to_export if i not in avail]
+    for i in missing:
+        print(f"! OSTRZEZENIE: brak pliku/metadanych dla {i} (wycofany lub spoza indeksow) - pomijam", file=sys.stderr, flush=True)
+    todo = [avail[i] for i in to_export if i in avail]
+    tasks = [(d[0], d[1], d[2], str(d[3]), d[4], d[5]) for d in todo]
+
+    delta = outdir / "chunks_delta.jsonl"
+    delta_tmp = delta.with_name(delta.name + ".tmp")
+    ok_ids, notext_ids, notext_new, errors = [], [], [], []
+    nd = nc = nf = 0
+    fffd_docs = []
+    try:
+        with open(delta_tmp, "wb") as fo:
+            if tasks:
+                workers = max(1, min(a.workers, len(tasks)))
+                with mp.Pool(workers) as pool:
+                    for doc_id, st, info, lines, fcount, dt in pool.imap_unordered(process, tasks, 1):
+                        if st == "ok":
+                            fo.write(("\n".join(lines) + "\n").encode("utf-8"))
+                            ok_ids.append(doc_id)
+                            nd += 1
+                            nc += len(lines)
+                        elif st == "notext":
+                            notext_ids.append(doc_id)
+                            notext_new.append(f"{doc_id}\t{info}")
+                        else:
+                            errors.append(f"{doc_id}\t{info}")
+                        if fcount:
+                            nf += fcount
+                            fffd_docs.append(doc_id)
+            fo.flush()
+            os.fsync(fo.fileno())
+        os.replace(delta_tmp, delta)
+    except BaseException:
+        if delta_tmp.exists():
+            delta_tmp.unlink()
+        raise
+
+    # Co usunac ze starego chunks.jsonl: removed + dokumenty, ktorych nowy stan znamy (ok / brak warstwy tekstowej).
+    # Dokumenty z bledem ekstrakcji lub bez pliku zachowuja stare wiersze (lepsze stare niz brak).
+    drop = set(removed) | set(ok_ids) | set(notext_ids)
+    n_rm, n_add, trunc = rewrite_chunks(out, drop, delta)
+    if trunc:
+        print("! OSTRZEZENIE: ucieto niepelna ostatnia linie w chunks.jsonl", file=sys.stderr)
+
+    nt_f = outdir / "bez_tekstu.txt"
+    notext_all = _update_list_file(nt_f, drop, notext_new)
+    nt_f.write_text("\n".join(notext_all) + ("\n" if notext_all else ""), encoding="utf-8")
+    er_f = outdir / "bledy.txt"
+    err_all = _update_list_file(er_f, drop | {e.split("\t")[0] for e in errors}, errors)
+    if err_all:
+        er_f.write_text("\n".join(err_all) + "\n", encoding="utf-8")
+    elif er_f.exists():
+        er_f.unlink()
+
+    tot_d, tot_c, tot_f, size, per_kat = final_scan(out)
+    rep = [
+        f"Raport eksportu (--changed) {time.strftime('%Y-%m-%d %H:%M:%S')}",
+        f"Zmiany wejsciowe: added={len(added)}, changed={len(changed)}, removed={len(removed)}; czas {time.time() - t0:.1f} s",
+        f"Usunieto wierszy ze starego pliku: {n_rm}; dopisano wierszy: {n_add} (dokumentow {nd}, fragmentow {nc}) -> {delta.name}",
+        f"Pominiete (brak pliku/metadanych, stare wiersze zachowane): {len(missing)}" + (f" ({', '.join(missing[:20])})" if missing else ""),
+        f"Bez warstwy tekstowej w tym przebiegu: {len(notext_new)}; bledow ekstrakcji (stare wiersze zachowane): {len(errors)}",
+        f"U+FFFD usunięte z tekstu źródłowego w tym przebiegu: {nf}" + (f" (doc: {', '.join(fffd_docs[:20])})" if fffd_docs else ""),
+        f"RAZEM w {out.name}: dokumentów {tot_d}, fragmentów {tot_c}, U+FFFD w pliku {tot_f}, rozmiar {size / 1e6:.1f} MB",
+        "Dokumenty wg kategorii: " + ", ".join(f"{k}={v}" for k, v in sorted(per_kat.items())),
+    ]
+    (outdir / "raport.txt").write_text("\n".join(rep) + "\n", encoding="utf-8")
+    print("\n".join(rep))
+    return 0
+
+
+def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--kategorie", default="")
@@ -446,16 +611,27 @@ def main():
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 4) // 2))
     ap.add_argument("--out", default=str(OUT / "chunks.jsonl"))
     ap.add_argument("--doc", default="", help="lista doc_id po przecinku (tylko te)")
-    a = ap.parse_args()
+    ap.add_argument("--changed", metavar="ZMIANY_JSON",
+                    help="tryb przyrostowy: stan/zmiany.json - usun changed+removed z --out, wyeksportuj added+changed i dopisz")
+    ap.add_argument("--dane", default="", help="katalog z danymi (domyslnie dane/ w korzeniu repo)")
+    a = ap.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
-    OUT.mkdir(parents=True, exist_ok=True)
+    if a.changed:
+        if a.resume or a.doc or a.limit:
+            sys.exit("--changed nie laczy sie z --resume/--doc/--limit")
+        try:
+            return main_changed(a)
+        except (OSError, ValueError) as e:
+            sys.exit(f"Blad trybu --changed: {e}")
     out = Path(a.out)
-    notext_f = OUT / "bez_tekstu.txt"
+    outdir = out.parent  # raporty obok pliku wyjsciowego (domyslnie pipeline/out)
+    outdir.mkdir(parents=True, exist_ok=True)
+    notext_f = outdir / "bez_tekstu.txt"
     kat = {k.strip() for k in a.kategorie.split(",") if k.strip()}
     t0 = time.time()
-    meta = load_meta()
-    docs = list_docs(meta, kat)
+    meta = load_meta(a.dane or None)
+    docs = list_docs(meta, kat, a.dane or None)
     print(f"dokumentów w dane/: {len(docs)}", flush=True)
     if a.doc:
         want = {x.strip() for x in a.doc.split(",")}
@@ -498,7 +674,7 @@ def main():
                     print(f"  {k}/{len(tasks)} {time.time() - t0:.0f}s", flush=True)
     notext_f.write_text("\n".join(notext) + ("\n" if notext else ""), encoding="utf-8")
     if errors:
-        (OUT / "bledy.txt").write_text("\n".join(errors) + "\n", encoding="utf-8")
+        (outdir / "bledy.txt").write_text("\n".join(errors) + "\n", encoding="utf-8")
     tot_d, tot_c, tot_f, size, per_kat = final_scan(out)
     rep = [
         f"Raport eksportu {time.strftime('%Y-%m-%d %H:%M:%S')}",
@@ -509,10 +685,11 @@ def main():
         "Dokumenty wg kategorii: " + ", ".join(f"{k}={v}" for k, v in sorted(per_kat.items())),
         f"Pliki bez warstwy tekstowej (skany) łącznie: {len(notext)} -> {notext_f.name}",
     ]
-    (OUT / "raport.txt").write_text("\n".join(rep) + "\n", encoding="utf-8")
+    (outdir / "raport.txt").write_text("\n".join(rep) + "\n", encoding="utf-8")
     print("\n".join(rep))
+    return 0
 
 
 if __name__ == "__main__":
     mp.freeze_support()
-    main()
+    sys.exit(main() or 0)

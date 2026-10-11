@@ -19,6 +19,27 @@ describe('warningsFor', () => {
       expect(warningsFor({ kategoria: k }).length).toBeGreaterThan(0);
     }
   });
+  it('wyrok: ostrzeżenie podstawowe + prawomocność/anonimizacja, status „orzeczenie” nie daje ostrzeżenia o nieobowiązywaniu', () => {
+    const w = warningsFor({ kategoria: 'wyrok', status: 'orzeczenie', is_consolidated: false });
+    expect(w[0]).toBe('Wyrok sądu – nie jest przepisem; dotyczy konkretnej sprawy.');
+    expect(w).toHaveLength(2);
+    expect(w[1]).toContain('zanonimizowana');
+    expect(w.join(' ')).not.toContain('Status aktu');
+  });
+  it('ue: oryginał z Dz.Urz. vs wersja ujednolicona; status opisowy nie generuje ostrzeżenia o statusie', () => {
+    const orig = warningsFor({ kategoria: 'ue', status: 'tekst z Dz.Urz. UE (brzmienie z dnia publikacji)', is_consolidated: false });
+    expect(orig[0]).toBe('Akt prawa UE – sprawdź aktualną wersję w EUR-Lex.');
+    expect(orig).toHaveLength(2);
+    expect(orig[1]).toContain('w brzmieniu z dnia publikacji');
+    const ujed = warningsFor({ kategoria: 'ue', status: 'tekst ujednolicony UE (dokumentacyjny)', is_consolidated: true });
+    expect(ujed).toHaveLength(2);
+    expect(ujed[1]).toContain('dokumentacyjny');
+    expect(ujed.join(' ')).not.toContain('Status aktu');
+  });
+  it('nowe ostrzeżenia nie zmieniają pozostałych kategorii', () => {
+    expect(warningsFor({ kategoria: 'orzeczenie' })).toEqual(['Orzeczenie TK – nie jest przepisem.']);
+    expect(warningsFor({ kategoria: 'mp', status: 'uchylony' })).toHaveLength(2);
+  });
   it('status nieobowiązujący dodaje ostrzeżenie', () => {
     const w = warningsFor({ kategoria: 'ujednolicone', status: 'uchylony' });
     expect(w).toHaveLength(1);

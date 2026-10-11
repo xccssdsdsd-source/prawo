@@ -1,0 +1,272 @@
+{
+ "opis": "Lista zweryfikowanych numerów CELEX (żywe zapytania do publications.europa.eu, 2026-10-11: HTTP 200, tekst polski). 'format' = pierwszy format, który zadziałał (xhtml -> html -> pdf); fetcher i tak próbuje pozostałych. Aby dodać akt, dopisz obiekt {\"celex\":\"...\",\"nazwa\":\"...\"}. 3... = tekst z Dz.Urz. UE (oryginał), 0...-RRRRMMDD = wersja ujednolicona.",
+ "zweryfikowano": "2026-10-11",
+ "akty": [
+  {
+   "celex": "32016R0679",
+   "nazwa": "RODO – ogólne rozporządzenie o ochronie danych",
+   "grupa": "prywatność i dane",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32016L0680",
+   "nazwa": "dyrektywa o ochronie danych osobowych w sprawach karnych (dyrektywa policyjna)",
+   "grupa": "prywatność i dane",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32002L0058",
+   "nazwa": "dyrektywa o prywatności i łączności elektronicznej (e-Privacy)",
+   "grupa": "prywatność i dane",
+   "format": "html"
+  },
+  {
+   "celex": "32018R1725",
+   "nazwa": "rozporządzenie o ochronie danych osobowych w instytucjach i organach UE",
+   "grupa": "prywatność i dane",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32011L0083",
+   "nazwa": "dyrektywa o prawach konsumentów",
+   "grupa": "konsumenci i handel",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32019L0770",
+   "nazwa": "dyrektywa o umowach o dostarczanie treści cyfrowych i usług cyfrowych",
+   "grupa": "konsumenci i handel",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32019L0771",
+   "nazwa": "dyrektywa o umowach sprzedaży towarów",
+   "grupa": "konsumenci i handel",
+   "format": "xhtml"
+  },
+  {
+   "celex": "31993L0013",
+   "nazwa": "dyrektywa o nieuczciwych warunkach w umowach konsumenckich",
+   "grupa": "konsumenci i handel",
+   "format": "html"
+  },
+  {
+   "celex": "32005L0029",
+   "nazwa": "dyrektywa o nieuczciwych praktykach handlowych",
+   "grupa": "konsumenci i handel",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32000L0031",
+   "nazwa": "dyrektywa o handlu elektronicznym",
+   "grupa": "konsumenci i handel",
+   "format": "html"
+  },
+  {
+   "celex": "32013L0011",
+   "nazwa": "dyrektywa o alternatywnych metodach rozstrzygania sporów konsumenckich (ADR)",
+   "grupa": "konsumenci i handel",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32024L2853",
+   "nazwa": "dyrektywa o odpowiedzialności za produkty wadliwe (nowa)",
+   "grupa": "konsumenci i handel",
+   "format": "xhtml"
+  },
+  {
+   "celex": "31985L0374",
+   "nazwa": "dyrektywa o odpowiedzialności za produkty wadliwe (dawna)",
+   "grupa": "konsumenci i handel",
+   "format": "html"
+  },
+  {
+   "celex": "32004R0261",
+   "nazwa": "rozporządzenie o prawach pasażerów lotniczych",
+   "grupa": "konsumenci i handel",
+   "format": "html"
+  },
+  {
+   "celex": "32008R0593",
+   "nazwa": "Rzym I – prawo właściwe dla zobowiązań umownych",
+   "grupa": "prawo prywatne międzynarodowe i procedura",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32007R0864",
+   "nazwa": "Rzym II – prawo właściwe dla zobowiązań pozaumownych",
+   "grupa": "prawo prywatne międzynarodowe i procedura",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32012R1215",
+   "nazwa": "Bruksela I bis – jurysdykcja i uznawanie orzeczeń w sprawach cywilnych i handlowych",
+   "grupa": "prawo prywatne międzynarodowe i procedura",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32001R0044",
+   "nazwa": "Bruksela I – jurysdykcja i uznawanie orzeczeń (dawne)",
+   "grupa": "prawo prywatne międzynarodowe i procedura",
+   "format": "html"
+  },
+  {
+   "celex": "32003R2201",
+   "nazwa": "Bruksela IIa – jurysdykcja w sprawach małżeńskich i odpowiedzialności rodzicielskiej (dawne)",
+   "grupa": "prawo prywatne międzynarodowe i procedura",
+   "format": "html"
+  },
+  {
+   "celex": "32019R1111",
+   "nazwa": "Bruksela IIb – jurysdykcja w sprawach małżeńskich i odpowiedzialności rodzicielskiej",
+   "grupa": "prawo prywatne międzynarodowe i procedura",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32010R1259",
+   "nazwa": "Rzym III – prawo właściwe dla rozwodu i separacji",
+   "grupa": "prawo prywatne międzynarodowe i procedura",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32012R0650",
+   "nazwa": "rozporządzenie spadkowe (jurysdykcja i prawo właściwe w sprawach spadkowych)",
+   "grupa": "prawo prywatne międzynarodowe i procedura",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32009R0004",
+   "nazwa": "rozporządzenie alimentacyjne",
+   "grupa": "prawo prywatne międzynarodowe i procedura",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32004R0805",
+   "nazwa": "rozporządzenie o Europejskim Tytule Egzekucyjnym",
+   "grupa": "prawo prywatne międzynarodowe i procedura",
+   "format": "html"
+  },
+  {
+   "celex": "32015R0848",
+   "nazwa": "rozporządzenie o postępowaniu upadłościowym (niewypłacalność)",
+   "grupa": "prawo prywatne międzynarodowe i procedura",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32022R2065",
+   "nazwa": "DSA – akt o usługach cyfrowych",
+   "grupa": "sektor cyfrowy i platformy",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32022R1925",
+   "nazwa": "DMA – akt o rynkach cyfrowych",
+   "grupa": "sektor cyfrowy i platformy",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32023R2854",
+   "nazwa": "Data Act – akt w sprawie danych",
+   "grupa": "sektor cyfrowy i platformy",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32024R1689",
+   "nazwa": "AI Act – akt w sprawie sztucznej inteligencji",
+   "grupa": "sektor cyfrowy i platformy",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32014R0910",
+   "nazwa": "eIDAS – identyfikacja elektroniczna i usługi zaufania",
+   "grupa": "sektor cyfrowy i platformy",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32019L1937",
+   "nazwa": "dyrektywa o ochronie sygnalistów",
+   "grupa": "spółki, finanse i konkurencja",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32022L2464",
+   "nazwa": "CSRD – dyrektywa w sprawie sprawozdawczości przedsiębiorstw w zakresie zrównoważonego rozwoju",
+   "grupa": "spółki, finanse i konkurencja",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32014L0104",
+   "nazwa": "dyrektywa o roszczeniach o naprawienie szkody z tytułu naruszeń prawa konkurencji",
+   "grupa": "spółki, finanse i konkurencja",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32004R0139",
+   "nazwa": "rozporządzenie w sprawie kontroli koncentracji przedsiębiorstw",
+   "grupa": "spółki, finanse i konkurencja",
+   "format": "html"
+  },
+  {
+   "celex": "32014L0065",
+   "nazwa": "MiFID II – dyrektywa w sprawie rynków instrumentów finansowych",
+   "grupa": "spółki, finanse i konkurencja",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32013R0575",
+   "nazwa": "CRR – rozporządzenie w sprawie wymogów ostrożnościowych dla instytucji kredytowych",
+   "grupa": "spółki, finanse i konkurencja",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32015L2366",
+   "nazwa": "PSD2 – dyrektywa w sprawie usług płatniczych",
+   "grupa": "spółki, finanse i konkurencja",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32014R0596",
+   "nazwa": "MAR – rozporządzenie w sprawie nadużyć na rynku",
+   "grupa": "spółki, finanse i konkurencja",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32017R1129",
+   "nazwa": "rozporządzenie w sprawie prospektu",
+   "grupa": "spółki, finanse i konkurencja",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32006L0123",
+   "nazwa": "dyrektywa usługowa",
+   "grupa": "spółki, finanse i konkurencja",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32019L0790",
+   "nazwa": "dyrektywa o prawie autorskim na jednolitym rynku cyfrowym",
+   "grupa": "spółki, finanse i konkurencja",
+   "format": "xhtml"
+  },
+  {
+   "celex": "32014L0024",
+   "nazwa": "dyrektywa o zamówieniach publicznych",
+   "grupa": "spółki, finanse i konkurencja",
+   "format": "xhtml"
+  },
+  {
+   "celex": "12012E101",
+   "nazwa": "TFUE art. 101 – zakaz porozumień ograniczających konkurencję",
+   "grupa": "traktaty (pojedyncze artykuły)",
+   "format": "xhtml",
+   "tytul": "Traktat o funkcjonowaniu Unii Europejskiej (TFUE) – artykuł 101 (wersja skonsolidowana)"
+  },
+  {
+   "celex": "12012E267",
+   "nazwa": "TFUE art. 267 – pytania prejudycjalne",
+   "grupa": "traktaty (pojedyncze artykuły)",
+   "format": "xhtml",
+   "tytul": "Traktat o funkcjonowaniu Unii Europejskiej (TFUE) – artykuł 267 (wersja skonsolidowana)"
+  }
+ ]
+}

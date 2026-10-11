@@ -1,0 +1,44 @@
+[
+  {
+    "id": "tk",
+    "nazwa": "Trybunał Konstytucyjny (trybunal.gov.pl)",
+    "powod": "Brak udokumentowanego publicznego API ani otwartego zbioru danych. Kanały RSS (/rss.xml, /postepowanie-i-orzeczenia/wyroki/rss.xml) zwróciły w dniu rozpoznania (2026-10-11) poprawny RSS bez żadnej pozycji. robots.txt dopuszcza roboty poza panelem TYPO3, ale scraping HTML nie został zweryfikowany ani zaprojektowany.",
+    "alternatywa": "Orzeczenia TK z pełnym tekstem przez SAOS (courtType CONSTITUTIONAL_TRIBUNAL – fetcher saos z opcją typy_sadow). Skutek prawny wyroku (utrata mocy przepisu) widać w metadanych ELI aktu w api.sejm.gov.pl/eli.",
+    "sprawdzono": "2026-10-11"
+  },
+  {
+    "id": "sn",
+    "nazwa": "Sąd Najwyższy (sn.pl)",
+    "powod": "Serwis chroniony systemem anty-botowym (Imperva/Incapsula: pętla przekierowań 302, po ciasteczkach HTTP 403). Brak publicznego API ani otwartych danych. Ochrony nie wolno obchodzić.",
+    "alternatywa": "Orzeczenia SN przez SAOS (courtType SUPREME).",
+    "sprawdzono": "2026-10-11"
+  },
+  {
+    "id": "nsa",
+    "nazwa": "Sądy administracyjne – CBOSA (orzeczenia.nsa.gov.pl)",
+    "powod": "Brak API. robots.txt zabrania wyszukiwarki i pobierania dokumentów (/cbo/find, /cbo/do/search, /cbo/do/doc, *op=file), a GPTBot jest zablokowany całkowicie.",
+    "alternatywa": "Orzeczenia NSA/WSA przez SAOS (courtType ADMINISTRATIVE) – obecność w dumpie SAOS nie została potwierdzona na żywo (w próbce z 2026-09 były wyłącznie sądy powszechne).",
+    "sprawdzono": "2026-10-11"
+  },
+  {
+    "id": "portal-orzeczen",
+    "nazwa": "Portal Orzeczeń Sądów Powszechnych (orzeczenia.ms.gov.pl)",
+    "powod": "Brak oficjalnej dokumentacji API. Nieudokumentowany backend XML (apiorzeczenia.wroclaw.sa.gov.pl/ncourt-api) zwraca metadane i początek tekstu, ale nie ustalono endpointu z pełnym tekstem; portal blokuje WAF-em po serii zapytań. Interfejs może się zmienić bez uprzedzenia.",
+    "alternatywa": "Pełne teksty orzeczeń sądów powszechnych przez SAOS (courtType COMMON). Dla produkcji zapytać Ministerstwo Sprawiedliwości o udokumentowane API.",
+    "sprawdzono": "2026-10-11"
+  },
+  {
+    "id": "rcl",
+    "nazwa": "Rządowe Centrum Legislacji (legislacja.gov.pl)",
+    "powod": "robots.txt: 'User-agent: * / Disallow: /' (pełny zakaz robotów). Brak publicznego API.",
+    "alternatywa": "Projekty ustaw sejmowych: api.sejm.gov.pl/sejm (druki, procesy legislacyjne) – nie testowane w tym rozpoznaniu.",
+    "sprawdzono": "2026-10-11"
+  },
+  {
+    "id": "dane-gov-pl",
+    "nazwa": "dane.gov.pl (portal danych publicznych)",
+    "powod": "API działa bez klucza, ale zestawy dotyczące wymiaru sprawiedliwości to głównie statystyki (np. alimenty, SDE, osadzenia), nie teksty orzeczeń. Nie przejrzano wszystkich trafień.",
+    "alternatywa": "Brak – nie jest źródłem przepisów ani orzeczeń; ewentualnie do statystyk wymiaru sprawiedliwości.",
+    "sprawdzono": "2026-10-11"
+  }
+]

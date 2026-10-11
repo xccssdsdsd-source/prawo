@@ -1,0 +1,1775 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Podłącz Prawo PL do swojego AI – instrukcja krok po kroku</title>
+<meta name="description" content="Jak podłączyć otwarte API polskiego prawa (MCP i REST) do Claude, Gemini, ChatGPT, Cursor, VS Code i innych klientów AI. Gotowe snippety, test połączenia, prompt i rozwiązywanie problemów.">
+<script>
+(function(){try{var t=localStorage.getItem("prawo-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();
+</script>
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#fafaf7;--fg:#1c1d20;--muted:#55585f;--card:#fff;--line:#d9d9d2;
+  --accent:#1f4e8c;--accent-fg:#fff;--hl:#fff7e0;--hl-line:#c99a1f;--code:#f0f0ea;
+  --ok:#17653a;--ok-bg:#e6f4ea;--warn:#8a4b00;--warn-bg:#fff1dc;--warn-line:#c77700;--err:#a11a1a;--err-bg:#fdeaea;--info-bg:#e8f0fb;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#131416;--fg:#e8e8e4;--muted:#a3a6ad;--card:#1b1c1f;--line:#34363b;
+    --accent:#8db6ee;--accent-fg:#10151c;--hl:#262012;--hl-line:#c99a1f;--code:#23252a;
+    --ok:#7fd49c;--ok-bg:#15281c;--warn:#e8b062;--warn-bg:#2b2112;--warn-line:#c99a1f;--err:#ff8a8a;--err-bg:#2c1717;--info-bg:#17212f;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#131416;--fg:#e8e8e4;--muted:#a3a6ad;--card:#1b1c1f;--line:#34363b;
+  --accent:#8db6ee;--accent-fg:#10151c;--hl:#262012;--hl-line:#c99a1f;--code:#23252a;
+  --ok:#7fd49c;--ok-bg:#15281c;--warn:#e8b062;--warn-bg:#2b2112;--warn-line:#c99a1f;--err:#ff8a8a;--err-bg:#2c1717;--info-bg:#17212f;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-wrap:break-word}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--accent);color:var(--accent-fg);padding:8px 14px;z-index:10}
+.skip:focus{left:8px;top:8px}
+.topbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:12px 0;border-bottom:1px solid var(--line)}
+.topbar nav{display:flex;flex-wrap:wrap;gap:4px 14px;flex:1 1 auto}
+.topbar nav a{padding:6px 0;text-decoration:none}
+.topbar nav a:hover{text-decoration:underline}
+h1{font-size:clamp(1.7rem,6vw,2.5rem);line-height:1.15;margin:28px 0 8px;letter-spacing:-.01em}
+h2{font-size:1.4rem;margin:0 0 4px;line-height:1.25}
+h2+.sub{margin-bottom:14px}
+h3{font-size:1.15rem;margin:0 0 8px;line-height:1.3}
+h4{font-size:1rem;margin:18px 0 6px}
+.sub{color:var(--muted);margin:0 0 14px}
+.lead{font-size:1.08rem;max-width:64ch;margin:0 0 14px}
+section{padding:26px 0;border-top:1px solid var(--line)}
+a{color:var(--accent)}
+code{font:.9em ui-monospace,Consolas,monospace;background:var(--code);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:3px}
+button,.btn{font:inherit;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--accent-fg);border-radius:6px;padding:6px 14px;min-height:44px}
+button.ghost,.btn.ghost{background:transparent;color:var(--accent)}
+button[disabled]{opacity:.55;cursor:not-allowed}
+.small-btn{min-height:40px;padding:4px 12px;font-size:.92rem}
+pre{margin:0;background:var(--code);border-radius:6px;padding:10px;font:13px/1.5 ui-monospace,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
+input[type=text],input[type=url],input[type=password]{width:100%;min-height:44px;font:inherit;padding:6px 10px;border:1px solid var(--muted);border-radius:6px;background:var(--card);color:var(--fg)}
+label{display:block;font-weight:600;margin:0 0 4px}
+.hint{color:var(--muted);font-size:.9rem;margin:4px 0 0}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.asof-banner{background:var(--hl);border:2px solid var(--hl-line);border-radius:10px;padding:14px 16px;margin:0 0 14px}
+.asof-banner strong{font-size:1.1rem}
+.callout{border:1px solid var(--line);border-left-width:5px;border-radius:6px;padding:10px 12px;margin:12px 0;background:var(--info-bg)}
+.callout.warn{background:var(--warn-bg);border-color:var(--warn-line);color:var(--fg)}
+.callout.err{background:var(--err-bg);border-color:var(--err)}
+.callout p{margin:0 0 6px}.callout p:last-child{margin:0}
+.badge{display:inline-block;border-radius:999px;padding:2px 10px;font-size:.84rem;font-weight:600;border:1px solid currentColor}
+.badge.ok{color:var(--ok);background:var(--ok-bg)}
+.badge.warn{color:var(--warn);background:var(--warn-bg)}
+.badge.info{color:var(--accent);background:var(--info-bg)}
+.meta{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;color:var(--muted);font-size:.92rem;margin:0 0 10px}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.tabs button{background:var(--card);color:var(--fg);border:1px solid var(--line);text-align:left}
+.tabs button[aria-selected="true"],.clients button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.tabs button small{display:block;font-size:.78rem;opacity:.85}
+.clients{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px;padding:0;list-style:none}
+.clients button{font-size:.93rem}
+.help{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin:0 0 18px}
+.help .card{padding:12px}
+.help .card p{margin:0 0 8px;font-size:.93rem}
+figure.snip{margin:12px 0}
+figure.snip figcaption{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between;font-weight:600;font-size:.93rem;margin:0 0 4px}
+figure.snip .tag-unv{color:var(--warn);font-weight:600;font-size:.82rem}
+ol.steps{padding-left:22px;margin:0 0 12px}
+ol.steps li{margin:0 0 8px}
+ul.plain{padding-left:20px;margin:0 0 12px}
+ul.plain li{margin:0 0 6px}
+.addr{display:grid;gap:6px;margin:12px 0}
+.addr .row{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
+.addr pre{flex:1 1 240px;min-width:0;display:flex;align-items:center}
+.src{font-size:.9rem;color:var(--muted)}
+.src ul{padding-left:20px;margin:4px 0 0}
+details{border:1px solid var(--line);border-radius:8px;background:var(--card);margin:0 0 8px}
+details summary{cursor:pointer;padding:10px 14px;font-weight:600;min-height:44px}
+details .body{padding:0 14px 12px}
+details .body p{margin:0 0 8px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+#test-out{list-style:none;padding:0;margin:14px 0 0}
+#test-out li{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:0 0 8px;background:var(--card)}
+#test-out .st{font-weight:700;margin-right:6px}
+#test-out .ok{color:var(--ok)}#test-out .bad{color:var(--err)}#test-out .wn{color:var(--warn)}#test-out .run{color:var(--muted)}
+#test-out .detail{color:var(--muted);font-size:.9rem;margin:4px 0 0;white-space:pre-wrap}
+#test-sum{font-weight:600;margin:12px 0 0}
+footer{border-top:1px solid var(--line);padding:24px 0 40px;color:var(--muted);font-size:.93rem}
+footer p{margin:0 0 6px}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Przejdź do treści</a>
+<div class="wrap">
+<div class="topbar">
+  <nav aria-label="Nawigacja po stronie">
+    <a href="/">Strona główna</a>
+    <a href="#kreator">Kreator</a>
+    <a href="#test">Test połączenia</a>
+    <a href="#prompt">Prompt</a>
+    <a href="#stan-danych">Stan danych</a>
+    <a href="#problemy">Problemy</a>
+  </nav>
+  <button type="button" class="ghost small-btn" id="theme-btn" aria-label="Motyw kolorystyczny: automatyczny. Kliknij, aby zmienić.">Motyw: auto</button>
+</div>
+
+<main id="main">
+<header>
+  <h1>Podłącz Prawo PL do swojego AI</h1>
+  <p class="lead">Krok po kroku: jak dać Claude, Gemini, ChatGPT, Cursorowi i innym asystentom dostęp do polskich przepisów (Dz.U. i M.P.). Wybierz, czego używasz, skopiuj gotowy snippet i sprawdź połączenie przyciskiem testu.</p>
+  <div class="asof-banner" role="status">
+    <strong>Stan danych na dzień <span id="asof-val"><!--ASOF:START-->11.10.2026<!--ASOF:END--></span></strong>
+    <p style="margin:4px 0 0">Przepisy ogłoszone później nie są uwzględnione. <a href="/data-info.json">Pobierz /data-info.json</a> (daty, liczby, źródła). <a href="#stan-danych">Dlaczego to ważne</a></p>
+  </div>
+  <noscript>
+    <div class="callout warn" role="note"><p><strong>Ta strona wymaga JavaScriptu</strong>, żeby pokazać kreator i test połączenia. Bez niego: adres serwera MCP to <code>https://TWOJA-DOMENA.vercel.app/api/mcp</code> (zamień domenę na swoją, uwierzytelnianie: brak), schemat REST to <code>/openapi.json</code>, instrukcja dla modeli to <code>/llms.txt</code>, a pliki z instrukcjami są w katalogu <code>ai/</code> repozytorium.</p></div>
+  </noscript>
+</header>
+
+<section id="adres" aria-labelledby="h-adres">
+  <h2 id="h-adres">Twój adres wdrożenia</h2>
+  <p class="sub">Wszystkie snippety poniżej podstawiają ten adres automatycznie.</p>
+  <div class="card">
+    <label for="base-in">Adres (domena) tego wdrożenia</label>
+    <input type="url" id="base-in" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://twoja-domena.vercel.app">
+    <p class="hint" id="base-hint">Domyślnie bierzemy adres, pod którym otwarto tę stronę.</p>
+    <p id="base-warn" class="callout warn" role="note" hidden></p>
+  </div>
+</section>
+
+<section id="kreator" aria-labelledby="h-kreator">
+  <h2 id="h-kreator">Kreator: czego używasz?</h2>
+  <p class="sub">Najpierw wybierz rodzinę narzędzi, potem konkretny program. Przy każdej instrukcji widzisz datę weryfikacji i poziom pewności.</p>
+
+  <h3>Nie wiesz, co wybrać?</h3>
+  <div class="help" id="help"></div>
+
+  <div id="groups" class="tabs" role="tablist" aria-label="Rodzina narzędzi"></div>
+  <div id="client-panel" role="tabpanel"><ul id="client-list" class="clients" aria-label="Programy w wybranej rodzinie"></ul></div>
+  <div id="detail"></div>
+</section>
+
+<section id="test" aria-labelledby="h-test">
+  <h2 id="h-test">Test połączenia</h2>
+  <p class="sub">Sprawdza z Twojej przeglądarki: <code>/data-info.json</code>, <code>/api/health</code>, a potem serwer MCP (<code>initialize</code>, <code>tools/list</code> i jedno przykładowe wyszukiwanie).</p>
+  <div class="card">
+    <label for="key-in">Klucz API (tylko jeśli właściciel go włączył)</label>
+    <input type="password" id="key-in" autocomplete="off" spellcheck="false" placeholder="zostaw puste, jeśli API jest otwarte">
+    <p class="hint">Klucz nie jest nigdzie zapisywany i jest wysyłany tylko pod adres podany wyżej.</p>
+    <p style="margin:12px 0 0"><button type="button" id="test-btn">Uruchom test</button></p>
+    <ol id="test-out" aria-live="polite" aria-label="Wyniki testu"></ol>
+    <p id="test-sum" role="status"></p>
+  </div>
+</section>
+
+<section id="prompt" aria-labelledby="h-prompt">
+  <h2 id="h-prompt">Prompt do wklejenia</h2>
+  <p class="sub">Wklej jako instrukcje systemowe / niestandardowe / projektu. Ten sam tekst jest w <code>ai/SYSTEM_PROMPT.md</code> (wersja krótka); dłuższa wersja i zasady dla agentów są w <code>ai/</code> i pod <code>/llms.txt</code>.</p>
+  <figure class="snip" style="margin:0">
+    <figcaption><span>System prompt (wersja krótka)</span><button type="button" class="small-btn" data-copy-el="prompt-text">Kopiuj</button></figcaption>
+    <pre id="prompt-text"><!--PROMPT:START-->Jesteś asystentem informacji o prawie polskim. Masz dostęp do narzędzi: search_law (szukanie fragmentów aktów), get_article (dokładne brzmienie artykułu), get_act (metadane i spis artykułów aktu). Baza: Dziennik Ustaw i Monitor Polski (obowiązujące), a gdy włączono dodatkowe źródła – także orzecznictwo i prawo UE.
+
+Zasady:
+1. STAN DANYCH – obowiązkowo w każdej odpowiedzi opartej na narzędziach: "Stan danych na dzień &lt;data_as_of&gt;" (pole data_as_of z odpowiedzi narzędzia; gdy go brak – z /api/health lub /data-info.json) oraz ostrzeżenie, że przepisy ogłoszone po tej dacie nie są uwzględnione, a teksty ujednolicone mogą być starsze niż data_as_of.
+2. Szukaj: search_law z krótką frazą kluczową w polu query (2-4 słowa), ewentualnie z "art. N" i nazwą aktu. Nie wklejaj całego pytania.
+3. Weryfikuj: każdy przepis, który przytaczasz, sprawdź przez get_article. Snippet z wyszukiwania nie wystarcza.
+4. NIGDY nie wymyślaj numerów artykułów ani treści przepisów. Jeśli nie znajdziesz – powiedz to. Brak wyniku nie oznacza braku przepisu.
+5. Hierarchia źródeł: ujednolicone &gt; jednolite &gt; podstawowe (brzmienie z dnia ogłoszenia, może być nieaktualne) &gt; zmieniające (nowelizacje – nie są obowiązującą treścią). Orzeczenia, wyroki, umowy i prawo UE to nie krajowe przepisy.
+6. Czytaj i przekazuj pole warnings. Jeśli truncated=true – zaznacz, że tekst obcięty.
+7. Cytuj: art. N § M skrót aktu (display_address, kategoria) + source_url. Cytat dosłowny w cudzysłowie.
+8. Dopytaj, gdy wynik zależy od daty zdarzenia, rodzaju umowy, stron lub rodzaju sprawy.
+9. Nie udzielaj pewnych porad. Bez słów "na pewno", "gwarantuję". Zakończ zastrzeżeniem: to informacja ogólna, nie porada prawna; aktualność sprawdź w ISAP lub u prawnika.
+10. Odpowiadaj w języku użytkownika, terminy prawne po polsku.<!--PROMPT:END--></pre>
+  </figure>
+  <h3 style="margin-top:16px">Zapytanie testowe</h3>
+  <figure class="snip" style="margin:0">
+    <figcaption><span>Wklej do czatu po podłączeniu</span><button type="button" class="small-btn" data-copy-el="test-prompt">Kopiuj</button></figcaption>
+    <pre id="test-prompt">Użyj narzędzia search_law i znajdź przepisy o terminie przedawnienia roszczeń. Potem pobierz get_article dla art. 118 Kodeksu cywilnego i zacytuj go. Na końcu podaj datę stanu danych (data_as_of).</pre>
+  </figure>
+</section>
+
+<section id="stan-danych" aria-labelledby="h-stan">
+  <h2 id="h-stan">Reguła: „Stan danych na dzień …”</h2>
+  <p class="sub">Najważniejsza zasada dla każdego modelu korzystającego z tego API.</p>
+  <div class="callout warn" role="note">
+    <p><strong>W każdej odpowiedzi opartej na API model musi podać linię „Stan danych na dzień <span id="asof-val2"><!--ASOF:START-->11.10.2026<!--ASOF:END--></span>”</strong> oraz ostrzeżenie, że przepisy ogłoszone po tej dacie nie są uwzględnione, a teksty ujednolicone mogą odzwierciedlać stan starszy niż ta data.</p>
+  </div>
+  <ul class="plain">
+    <li>Wartość bierze się z pola <code>data_as_of</code> w odpowiedzi REST i w narzędziach MCP (REST ma też nagłówek <code>X-Data-As-Of</code>), z <code>/api/health</code> albo z pliku <a href="/data-info.json">/data-info.json</a>.</li>
+    <li>Plik <code>/data-info.json</code> zawiera ponadto najnowsze akty Dz.U. i M.P., liczby dokumentów, listę źródeł (aktywne, uśpione, planowane) i datę ostatniej aktualizacji. <a href="/data-info.json" download>Pobierz plik</a>.</li>
+    <li>Jeśli model nie podaje stanu danych, wklej mu prompt z sekcji wyżej – to najczęstsza przyczyna.</li>
+    <li>To narzędzie pomocnicze, nie porada prawna. Aktualne brzmienie przepisu sprawdź w <a href="https://isap.sejm.gov.pl">ISAP</a>.</li>
+  </ul>
+  <p id="data-extra" class="hint"></p>
+</section>
+
+<section id="problemy" aria-labelledby="h-prob">
+  <h2 id="h-prob">Rozwiązywanie problemów</h2>
+  <p class="sub">Najczęstsze kłopoty przy podłączaniu. Najpierw uruchom <a href="#test">test połączenia</a>.</p>
+  <div id="trouble"></div>
+</section>
+</main>
+
+<footer>
+  <p>Instrukcje sprawdzono w dokumentacji producentów: <strong id="verified-foot">11.10.2026</strong>. Interfejsy tych programów zmieniają się szybko – jeśli ekran wygląda inaczej, kieruj się nazwami opcji i linkiem do dokumentacji przy instrukcji.</p>
+  <p>Narzędzie pomocnicze, nie porada prawna; aktualne brzmienie weryfikuj w ISAP (<a href="https://isap.sejm.gov.pl">isap.sejm.gov.pl</a>). Źródło danych: <a href="https://api.sejm.gov.pl/eli">API ELI Sejmu RP</a>.</p>
+  <p><a href="/">Strona główna</a> · <a href="/openapi.json">/openapi.json</a> · <a href="/llms.txt">/llms.txt</a> · <a href="/data-info.json">/data-info.json</a></p>
+</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+var VERIFIED="2026-10-11";
+var PLACEHOLDER="https://TWOJA-DOMENA.vercel.app";
+var R=String.raw;
+
+function $(id){return document.getElementById(id);}
+function mk(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined&&text!==null)e.textContent=text;return e;}
+function pl(iso){var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(iso||"");return m?m[3]+"."+m[2]+"."+m[1]:(iso||"");}
+function trim1(s){return String(s).replace(/^\n/,"").replace(/\s+$/,"");}
+
+/* ---------- adres ---------- */
+var BASE=PLACEHOLDER;
+(function(){
+  var o="";
+  try{if(location.protocol==="http:"||location.protocol==="https:")o=location.origin;}catch(e){}
+  if(o)BASE=o;
+})();
+function isLocalHost(u){
+  try{var h=new URL(u).hostname;return h==="localhost"||h==="127.0.0.1"||h==="[::1]"||/^192\.168\./.test(h)||/^10\./.test(h)||/\.local$/.test(h);}catch(e){return false;}
+}
+function sub(t){return String(t).split("__BASE__").join(BASE);}
+
+/* ---------- rich text: `kod`, **pogrubienie**, [tekst](https://...) ---------- */
+function rich(parent,text){
+  text=sub(text);
+  var re=/(`[^`]+`|\*\*[^*]+\*\*|\[[^\]]+\]\(https?:\/\/[^)\s]+\))/g,last=0,m;
+  while((m=re.exec(text))){
+    if(m.index>last)parent.appendChild(document.createTextNode(text.slice(last,m.index)));
+    var t=m[0];
+    if(t.charAt(0)==="`"){parent.appendChild(mk("code",null,t.slice(1,-1)));}
+    else if(t.charAt(0)==="*"){parent.appendChild(mk("strong",null,t.slice(2,-2)));}
+    else{
+      var mm=/^\[([^\]]+)\]\((.+)\)$/.exec(t);
+      var a=mk("a",null,mm[1]);a.href=mm[2];a.target="_blank";a.rel="noopener noreferrer";
+      a.appendChild(mk("span","vh"," (otwiera się w nowej karcie)"));
+      parent.appendChild(a);
+    }
+    last=m.index+t.length;
+  }
+  if(last<text.length)parent.appendChild(document.createTextNode(text.slice(last)));
+}
+function rp(tag,text,cls){var e=mk(tag,cls);rich(e,text);return e;}
+
+/* ---------- kopiowanie ---------- */
+function copyText(text,btn,label){
+  var orig=label||"Kopiuj";
+  function done(ok){
+    btn.textContent=ok?"Skopiowano":"Zaznacz i skopiuj ręcznie";
+    setTimeout(function(){btn.textContent=orig;},1800);
+  }
+  function legacy(){
+    try{
+      var ta=document.createElement("textarea");ta.value=text;ta.setAttribute("readonly","");ta.style.position="fixed";ta.style.top="-1000px";
+      document.body.appendChild(ta);ta.select();var ok=document.execCommand("copy");document.body.removeChild(ta);done(!!ok);
+    }catch(e){done(false);}
+  }
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){done(true);},legacy);
+  }else legacy();
+}
+function copyBtn(getText,ariaLabel){
+  var b=mk("button","small-btn","Kopiuj");b.type="button";
+  if(ariaLabel)b.setAttribute("aria-label","Kopiuj: "+ariaLabel);
+  b.addEventListener("click",function(){copyText(getText(),b);});
+  return b;
+}
+
+/* =====================================================================
+   DANE KLIENTÓW. Aktualizacja: ai/SOURCES.md. Pola:
+   id, g (grupa), name, tag, conf (ok|part|mem|own), why (dla part/mem), verified,
+   plan, url ("mcp"|"rest"|""), intro, steps[], snips[[etykieta,język,kod,niezweryfikowany?]],
+   warns[], notes[], src[[url,etykieta?]]
+   W snippetach: __BASE__ = adres wdrożenia; %{ = ${ (znak specjalny szablonu).
+   ===================================================================== */
+var GROUPS=[
+  {id:"claude",name:"Claude",sub:"claude.ai, Desktop, Code, API"},
+  {id:"gemini",name:"Gemini",sub:"CLI, API, aplikacja"},
+  {id:"openai",name:"ChatGPT i OpenAI",sub:"wtyczki, API, Codex"},
+  {id:"edytory",name:"Edytory i agenci kodu",sub:"Cursor, VS Code, Zed…"},
+  {id:"inne",name:"Inne aplikacje",sub:"Perplexity, Mistral…"},
+  {id:"dowolny",name:"Dowolny model",sub:"bez MCP, tylko REST"}
+];
+var CONF={
+  ok:{label:"Zweryfikowane w żywej dokumentacji",cls:"ok"},
+  part:{label:"Niezweryfikowane w żywej dokumentacji (częściowo)",cls:"warn"},
+  mem:{label:"Niezweryfikowane w żywej dokumentacji (z pamięci)",cls:"warn"},
+  own:{label:"Nasz własny interfejs – sprawdź testem",cls:"info"}
+};
+
+var CLIENTS=[
+/* ============================ CLAUDE ============================ */
+{id:"claude-web",g:"claude",name:"claude.ai w przeglądarce (konektor)",tag:"najprostsza droga",conf:"ok",verified:"2026-10-11",
+ plan:"Free (1 własny konektor), Pro, Max, Team, Enterprise",url:"mcp",
+ intro:"Dodajesz serwer MCP jako własny konektor. Serwer nie wymaga logowania, więc wybierasz „No sign in”. Połączenie wychodzi z chmury Anthropic, dlatego adres musi być publiczny (wdrożenie na Vercel takie jest).",
+ steps:[
+  "Zaloguj się na [claude.ai](https://claude.ai) i otwórz **Customize → Connectors** (bezpośrednio: [claude.ai/customize/connectors](https://claude.ai/customize/connectors)). Starsze opisy mówią o „Settings → Connectors” – interfejs się zmieniał, szukaj sekcji Connectors.",
+  "Kliknij **+ Add**, potem **Add custom connector**.",
+  "W polu nazwy wpisz `Prawo PL` (to nazwa widoczna na liście konektorów).",
+  "W polu **MCP server URL** wpisz adres z ramki powyżej (musi to być HTTPS i kończyć się na `/api/mcp`) i kliknij **Continue**.",
+  "W kroku **Authentication** wybierz **No sign in** (w nowszej dokumentacji: „No sign-in”). Opcje „Sign in now” i „Sign in when needed” dotyczą OAuth – nie są nam potrzebne.",
+  "Kliknij **Add**.",
+  "W rozmowie kliknij **+** w lewym dolnym rogu pola wiadomości, wybierz **Connectors** i włącz przełącznik przy konektorze Prawo PL. Włączenie działa osobno w każdej rozmowie.",
+  "Opcjonalnie: w Customize → Connectors wybierz konektor i ustaw uprawnienia narzędzi (Always allow / Blocked). Narzędzia są tylko do odczytu, więc „Allow always” jest rozsądne.",
+  "Wklej zapytanie testowe (sekcja „Prompt do wklejenia”) i sprawdź, czy odpowiedź zawiera linię „Stan danych na dzień …”."
+ ],
+ snips:[
+  ["Ustawienia w formularzu","text",R`
+Name:            Prawo PL
+MCP server URL:  __BASE__/api/mcp
+Authentication:  No sign in`],
+  ["Klucz API (tylko gdy włączono API_KEY i widzisz sekcję „Request headers”)","text",R`
+Header name:  authorization
+Value:        Bearer TWOJ_KLUCZ
+-- albo --
+Header name:  x-api-key
+Value:        TWOJ_KLUCZ`]
+ ],
+ warns:[
+  "**Klucz API:** sekcja „Request headers” jest w wersji beta i dostępna tylko dla ograniczonej puli organizacji. Dozwolone nazwy nagłówków: `authorization`, `x-api-key`, `x-auth-token` (maksymalnie 4). Jeśli sekcji nie widzisz, najprościej zostawić API otwarte (bez klucza).",
+  "**Zapora:** ruch z Claude pochodzi z zakresu `160.79.104.0/21`. Jeśli włączysz Vercel Firewall, nie blokuj go – inaczej konektor zgłosi „Couldn't reach the MCP server”."
+ ],
+ notes:[
+  "Plan Free: tylko jeden własny konektor.",
+  "Ustawień uwierzytelniania (w tym nagłówków) nie da się zmienić po dodaniu – usuń konektor i dodaj ponownie.",
+  "Limity: wynik narzędzia ok. 150 000 znaków, limit czasu ok. 240 s na wywołanie (jeden artykuł pomocy podaje 300 s – przyjmij niższą wartość).",
+  "Transport: adres kończący się na `/sse` wybiera przestarzały SSE; nasz kończy się na `/mcp` (Streamable HTTP) – to właściwy wybór.",
+  "Claude nie czyta automatycznie `/llms.txt` ani `/openapi.json`. W dokumentacji nie znaleziono możliwości dodania specyfikacji OpenAPI jako konektora – dla Claude używaj MCP."
+ ],
+ src:[["https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp"],["https://claude.com/docs/connectors/custom/add-unlisted.md"],["https://claude.com/docs/connectors/building.md"],["https://platform.claude.com/docs/en/api/ip-addresses"]]},
+
+{id:"claude-team",g:"claude",name:"claude.ai Team / Enterprise (dla organizacji)",tag:"dodaje Owner",conf:"ok",verified:"2026-10-11",
+ plan:"Team, Enterprise",url:"mcp",
+ intro:"Konektor dla całej organizacji dodaje Owner lub Primary Owner (na Enterprise także użytkownik z rolą z uprawnieniem do zarządzania bibliotekami organizacji). Zwykły członek sam nie doda własnego konektora.",
+ steps:[
+  "Owner: otwórz [Organization settings → Connectors](https://claude.ai/admin-settings/connectors).",
+  "Kliknij **Add**, wybierz **Custom**, a jeśli Claude zapyta o typ konektora – **Web**.",
+  "Wpisz adres z ramki powyżej, ustaw **No sign in** i kliknij **Add**.",
+  "Członkowie: Customize → Connectors, znajdź konektor z etykietą **Custom** i kliknij **Connect**. Potem włączają go w rozmowie przez **+ → Connectors**."
+ ],
+ snips:[["Ustawienia","text",R`
+Organization settings > Connectors > Add > Custom > Web
+URL:             __BASE__/api/mcp
+Authentication:  No sign in`]],
+ warns:[],
+ notes:[
+  "Serwer jest bez uwierzytelniania, więc ewentualny klucz w „Request headers” byłby wspólnym kluczem całej organizacji (nie identyfikuje użytkownika).",
+  "Ustawień uwierzytelniania nie da się zmienić po dodaniu."
+ ],
+ src:[["https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp"],["https://claude.com/docs/connectors/custom/add-unlisted.md"]]},
+
+{id:"claude-desktop",g:"claude",name:"Claude Desktop (Windows / macOS)",tag:"konektory jak w przeglądarce",conf:"part",
+ why:"Ścieżka przez konektory jest taka sama jak w przeglądarce i została sprawdzona. Wariant zapasowy (plik claude_desktop_config.json z mcp-remote) NIE jest opisany w oficjalnej dokumentacji Anthropic, a flagi mcp-remote nie zostały sprawdzone w jego dokumentacji.",
+ verified:"2026-10-11",plan:"Free, Pro, Max, Team, Enterprise",url:"mcp",
+ intro:"Zdalny serwer dodaje się w Claude Desktop tak samo jak w przeglądarce – przez konektory przypisane do konta. Plik konfiguracyjny służy oficjalnie do lokalnych serwerów (stdio).",
+ steps:[
+  "Otwórz ustawienia: Windows – **Ctrl+,** (lub menu w lewym górnym rogu → File → Settings); macOS – **Cmd+,** (lub menu Claude → Settings…). Potem **Connectors** (lub Customize → Connectors).",
+  "Kliknij **Add → Add custom connector**. Podaj nazwę i adres z ramki powyżej, **Continue**, Authentication: **No sign in**, **Add**. Jeśli konektor dodano już w przeglądarce na tym samym koncie, po zalogowaniu pojawi się też w Desktopie.",
+  "W rozmowie: ikona **+** (u dołu pola wiadomości) → **Connectors** → przełącznik konektora. **Manage connectors** otwiera listę.",
+  "Zapasowo, tylko gdy konektory są niedostępne (nieoficjalne): Settings → Developer → **Edit Config** otwiera `claude_desktop_config.json` (macOS `~/Library/Application Support/Claude/`, Windows `%APPDATA%\\Claude\\`). Dodaj wpis z mcp-remote (wymaga Node.js i `npx` w PATH) i **całkowicie zrestartuj** Claude Desktop (zamknij aplikację, nie tylko okno).",
+  "Logi przy problemach: macOS `~/Library/Logs/Claude`, Windows `%APPDATA%\\Claude\\logs` (pliki `mcp.log` i `mcp-server-NAZWA.log`)."
+ ],
+ snips:[
+  ["Wariant zapasowy: claude_desktop_config.json (nieoficjalny)","json",R`
+{
+  "mcpServers": {
+    "prawo-pl": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "__BASE__/api/mcp", "--transport", "http-only"]
+    }
+  }
+}`,true],
+  ["Wariant zapasowy z kluczem API (tylko tryb zamknięty)","json",R`
+{
+  "mcpServers": {
+    "prawo-pl": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "__BASE__/api/mcp", "--transport", "http-only",
+               "--header", "Authorization:%{AUTH_HEADER}"],
+      "env": { "AUTH_HEADER": "Bearer TWOJ_KLUCZ" }
+    }
+  }
+}`,true]
+ ],
+ warns:["Rekomendacja: używaj konektorów, nie pliku konfiguracyjnego. Część dostawców uznaje wpisy zdalne w claude_desktop_config.json za przestarzałe, a jedno zgłoszenie w repozytorium innego projektu twierdzi, że w Claude Desktop nie działają."],
+ notes:["Na Windows możliwy problem ze zmienną `${APPDATA}` w sekcji `env` (opisany w dokumentacji MCP dla serwerów lokalnych)."],
+ src:[["https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp"],["https://modelcontextprotocol.io/docs/develop/connect-remote-servers"],["https://modelcontextprotocol.io/docs/develop/connect-local-servers"],["https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop"]]},
+
+{id:"claude-code",g:"claude",name:"Claude Code (terminal / VS Code)",tag:"claude mcp add",conf:"ok",verified:"2026-10-11",
+ plan:"wymaga zainstalowanego Claude Code (bez planu konektorów)",url:"mcp",
+ intro:"Transport „http” to Streamable HTTP. Serwer bez OAuth i z opcjonalnym nagłówkiem Authorization jest w pełni wspierany.",
+ steps:[
+  "Dodaj serwer (domyślny zakres „local”: tylko Ty, tylko bieżący projekt) komendą z pierwszego snippetu.",
+  "Chcesz mieć go we wszystkich swoich projektach? Dodaj `--scope user` (zapis w `~/.claude.json`). Do wspólnego użycia w zespole: `--scope project` (zapis w `.mcp.json` w korzeniu projektu; Claude Code zapyta o zatwierdzenie serwera, reset: `claude mcp reset-project-choices`).",
+  "Sprawdź: `claude mcp list` (statusy m.in. Connected / Failed to connect / Needs authentication), `claude mcp get prawo-pl`, a w sesji komenda `/mcp` (status, liczba narzędzi, reconnect). Usuwanie: `claude mcp remove prawo-pl`.",
+  "Narzędzia pojawią się jako `mcp__prawo-pl__search_law`, `mcp__prawo-pl__get_article`, `mcp__prawo-pl__get_act`. Żeby uniknąć pytań o zgodę, dodaj regułę allow w ustawieniach (ostatni snippet).",
+  "Dla zespołu wpisz serwer do `.mcp.json` w repozytorium. Pole `type` jest obowiązkowe – wpis z samym `url` jest traktowany jak stdio i pomijany z błędem."
+ ],
+ snips:[
+  ["Dodanie serwera (lokalnie)","bash",R`claude mcp add --transport http prawo-pl __BASE__/api/mcp`],
+  ["Dla wszystkich projektów","bash",R`claude mcp add --transport http --scope user prawo-pl __BASE__/api/mcp`],
+  ["Z kluczem API (tylko tryb zamknięty)","bash",R`claude mcp add --transport http --scope user prawo-pl __BASE__/api/mcp --header "Authorization: Bearer TWOJ_KLUCZ"`],
+  ["Sprawdzenie","bash",R`
+claude mcp list
+claude mcp get prawo-pl`],
+  [".mcp.json w korzeniu projektu (bez klucza)","json",R`
+{
+  "mcpServers": {
+    "prawo-pl": {
+      "type": "http",
+      "url": "__BASE__/api/mcp"
+    }
+  }
+}`],
+  [".mcp.json z kluczem ze zmiennej środowiskowej (klucz nie trafia do repozytorium)","json",R`
+{
+  "mcpServers": {
+    "prawo-pl": {
+      "type": "http",
+      "url": "__BASE__/api/mcp",
+      "headers": { "Authorization": "Bearer %{PRAWO_API_KEY}" }
+    }
+  }
+}`],
+  ["Zezwolenie na narzędzia bez pytania (.claude/settings.json)","json",R`
+{
+  "permissions": {
+    "allow": ["mcp__prawo-pl__*"]
+  }
+}`]
+ ],
+ warns:[],
+ notes:[
+  "Pierwszeństwo przy tej samej nazwie: local > project > user (pola nie są scalane).",
+  "Rozwijanie `${ZMIENNA}` działa w `url` i `headers`; nazwy zmiennych poświadczeń typu `ANTHROPIC_API_KEY` są tam czytane jako puste – użyj własnej nazwy, np. `PRAWO_API_KEY`.",
+  "Limity wyjścia: ostrzeżenie powyżej 10 000 tokenów, domyślny limit 25 000 tokenów (`MAX_MCP_OUTPUT_TOKENS`). Opisy narzędzi i instrukcje serwera są przycinane do 2048 znaków.",
+  "Tool search domyślnie odkłada narzędzia MCP; jeśli chcesz mieć je zawsze widoczne, dodaj `\"alwaysLoad\": true` we wpisie serwera.",
+  "Dodatkowo możesz zainstalować skill z instrukcjami (wpis „Skill prawo-pl”)."
+ ],
+ src:[["https://code.claude.com/docs/en/mcp"],["https://code.claude.com/docs/en/agent-sdk/mcp"]]},
+
+{id:"claude-sdk",g:"claude",name:"Claude Agent SDK (TypeScript / Python)",tag:"dla programistów",conf:"ok",verified:"2026-10-11",
+ plan:"pakiety @anthropic-ai/claude-agent-sdk (TS) i claude-agent-sdk (Python)",url:"mcp",
+ intro:"Serwer HTTP podajesz w opcji `mcpServers` (TS) / `mcp_servers` (Python) z `type: \"http\"`. Bez zezwolenia w `allowedTools` Claude widzi narzędzia, ale nie może ich wywołać.",
+ steps:[
+  "Zainstaluj SDK: `npm i @anthropic-ai/claude-agent-sdk` albo `pip install claude-agent-sdk`.",
+  "Przekaż serwer w opcjach z `type: \"http\"` i `url` (alias `streamable-http` działa tylko w plikach JSON, nie w SDK).",
+  "Zezwól na narzędzia wzorcem `mcp__prawo-pl__*` w `allowedTools` / `allowed_tools`.",
+  "Status połączenia sprawdzisz w wiadomości `system/init` (pole `mcp_servers`: connected / pending / failed / needs-auth / disabled). „pending” nie zawsze oznacza błąd."
+ ],
+ snips:[
+  ["TypeScript","ts",R`
+import { query } from "@anthropic-ai/claude-agent-sdk";
+
+for await (const message of query({
+  prompt: "Znajdź artykuł o przedawnieniu roszczeń i podaj stan danych",
+  options: {
+    mcpServers: {
+      "prawo-pl": {
+        type: "http",
+        url: "__BASE__/api/mcp",
+        // headers: { Authorization: "Bearer " + process.env.PRAWO_API_KEY }, // tylko tryb zamknięty
+      },
+    },
+    allowedTools: ["mcp__prawo-pl__*"],
+  },
+})) {
+  if (message.type === "result" && message.subtype === "success") console.log(message.result);
+}`],
+  ["Python","python",R`
+from claude_agent_sdk import query, ClaudeAgentOptions
+
+options = ClaudeAgentOptions(
+    mcp_servers={"prawo-pl": {"type": "http", "url": "__BASE__/api/mcp"}},
+    allowed_tools=["mcp__prawo-pl__*"],
+)
+# async for message in query(prompt="Znajdź art. 118 KC i podaj stan danych", options=options): ...`]
+ ],
+ warns:[],
+ notes:["Limity wyjścia MCP jak w Claude Code (25 000 tokenów). Domyślny limit czasu połączenia: 30 s (`MCP_TIMEOUT`).","SDK nie uruchamia OAuth w przeglądarce – dla serwera bez OAuth to bez znaczenia."],
+ src:[["https://code.claude.com/docs/en/agent-sdk/mcp"]]},
+
+{id:"claude-api",g:"claude",name:"Claude API (Messages API, konektor MCP)",tag:"dla programistów",conf:"ok",verified:"2026-10-11",
+ plan:"funkcja w wersji beta; Claude API, Claude Platform on AWS, Microsoft Foundry; nie kwalifikuje się do Zero Data Retention",url:"mcp",
+ intro:"API samo łączy się z serwerem MCP i wykonuje wywołania narzędzi po swojej stronie. Wymaga nagłówka beta oraz bloku `mcp_toolset` w `tools`.",
+ steps:[
+  "Ustaw zmienną `ANTHROPIC_API_KEY` i wyślij nagłówek `anthropic-beta: mcp-client-2025-11-20` (stary `mcp-client-2025-04-04` jest wycofany). Nowszy `mcp-client-2026-09-15` (beta, tylko Claude API) dodaje przypinanie listy narzędzi – wysyłaj go ZAMIAST starego, nie obok.",
+  "Dodaj tablicę `mcp_servers` z obiektem `{type: \"url\", url: \"…/api/mcp\", name: \"prawo-pl\"}`.",
+  "W `tools` dodaj `{type: \"mcp_toolset\", mcp_server_name: \"prawo-pl\"}`. Każdy serwer z `mcp_servers` musi mieć dokładnie jeden `mcp_toolset` o tej samej nazwie.",
+  "Za `MODEL_ID` wstaw aktualny identyfikator modelu z dokumentacji platformy.",
+  "W odpowiedzi znajdziesz bloki `mcp_tool_use` i `mcp_tool_result`."
+ ],
+ snips:[
+  ["curl","bash",R`
+curl https://api.anthropic.com/v1/messages \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: $ANTHROPIC_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "anthropic-beta: mcp-client-2025-11-20" \
+  -d '{
+    "model": "MODEL_ID",
+    "max_tokens": 1000,
+    "messages": [{"role": "user", "content": "Co mówi art. 118 Kodeksu cywilnego? Podaj datę stanu danych."}],
+    "mcp_servers": [
+      {"type": "url", "url": "__BASE__/api/mcp", "name": "prawo-pl"}
+    ],
+    "tools": [
+      {"type": "mcp_toolset", "mcp_server_name": "prawo-pl"}
+    ]
+  }'`],
+  ["Python","python",R`
+response = client.beta.messages.create(
+    model="MODEL_ID",
+    max_tokens=1000,
+    messages=[{"role": "user", "content": "Co mówi art. 118 KC? Podaj stan danych."}],
+    mcp_servers=[{"type": "url", "url": "__BASE__/api/mcp", "name": "prawo-pl"}],
+    tools=[{"type": "mcp_toolset", "mcp_server_name": "prawo-pl"}],
+    betas=["mcp-client-2025-11-20"],
+)`],
+  ["Tryb zamknięty: pole authorization_token","json",R`
+{"type": "url", "url": "__BASE__/api/mcp", "name": "prawo-pl", "authorization_token": "TWOJ_KLUCZ"}`,true]
+ ],
+ warns:["Pole `authorization_token` jest opisane w dokumentacji jako token OAuth i (wniosek z opisu pola, niepotwierdzony wprost) trafia do nagłówka `Authorization: Bearer`. Nagłówka `x-api-key` tą drogą nie ustawisz. Dla serwera bez klucza pomiń to pole."],
+ notes:["Obsługiwane są tylko wywołania narzędzi (bez zasobów i promptów MCP). URL musi zaczynać się od `https://`.","Ruch wychodzący z API pochodzi z `160.79.104.0/21`.","Dla ograniczenia narzędzi użyj `default_config` z `enabled: false` i `configs` (allowlista) albo samych `configs` z `enabled: false` (denylista)."],
+ src:[["https://platform.claude.com/docs/en/agents-and-tools/mcp-connector"],["https://platform.claude.com/docs/en/api/ip-addresses"]]},
+
+{id:"claude-mobile",g:"claude",name:"Aplikacja Claude (iOS / Android)",tag:"korzysta z konektora z konta",conf:"part",
+ why:"Dokumentacja Anthropic mówi, że konektory działają we wszystkich klientach Claude, także mobilnych. Nie potwierdzono, czy własny konektor da się dodać bezpośrednio z aplikacji mobilnej, ani dokładnego układu menu.",
+ verified:"2026-10-11",plan:"jak claude.ai",url:"mcp",
+ intro:"Bezpieczne założenie: dodaj konektor w przeglądarce lub w Claude Desktop (wpisy „claude.ai” powyżej), a w aplikacji mobilnej używaj go na tym samym koncie.",
+ steps:[
+  "Dodaj konektor w przeglądarce lub Desktopie na tym samym koncie.",
+  "W aplikacji mobilnej zaloguj się na to konto i w rozmowie włącz konektor przez przycisk **+ → Connectors** (układ menu na telefonie nie jest opisany w przeczytanej dokumentacji).",
+  "Jeśli konektora nie widać: odśwież lub zaloguj się ponownie i sprawdź plan (Free ma jeden własny konektor)."
+ ],
+ snips:[],warns:[],notes:[],
+ src:[["https://claude.com/docs/connectors/building.md"],["https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp"]]},
+
+{id:"claude-skill",g:"claude",name:"Skill prawo-pl (instrukcje dla Claude)",tag:"uzupełnia konektor",conf:"ok",verified:"2026-10-11",
+ plan:"claude.ai/Desktop: Free, Pro, Max, Team, Enterprise (wymaga włączonego wykonywania kodu); Claude Code",url:"",
+ intro:"Skill to same instrukcje (kiedy używać narzędzi, jak cytować, obowiązek podania stanu danych). NIE zastępuje konektora – dane biorą się z serwera MCP, który dodajesz osobno. Gotowy plik jest w repozytorium: `ai/claude-skill/SKILL.md`.",
+ steps:[
+  "Folder skilla musi nazywać się tak samo jak pole `name` we frontmatterze, czyli `prawo-pl`, a w środku musi być plik `SKILL.md`. Niezgodność nazwy to typowy powód błędu wgrywania.",
+  "claude.ai / Desktop: spakuj folder `prawo-pl` do ZIP (folder skilla w korzeniu archiwum), potem Customize → Skills → **+** → **+ Create skill** → **Upload a skill** i wgraj ZIP. Skill pojawi się na liście z przełącznikiem. Włączenie wykonywania kodu: Free/Pro/Max – Settings → Capabilities → „Code execution and file creation”; Team/Enterprise – Owner w Organization settings → Plugins & skills.",
+  "Claude Code: skopiuj folder do `~/.claude/skills/prawo-pl/` (osobiście) albo `.claude/skills/prawo-pl/` (w repozytorium projektu). Wywołanie ręczne: `/prawo-pl`, automatyczne wg opisu."
+ ],
+ snips:[
+  ["Przygotowanie ZIP (PowerShell, w katalogu repozytorium)","powershell",R`
+Copy-Item -Recurse ai\claude-skill .\prawo-pl
+Compress-Archive -Path .\prawo-pl -DestinationPath prawo-pl.zip`],
+  ["Claude Code (bash)","bash",R`
+mkdir -p ~/.claude/skills/prawo-pl
+cp ai/claude-skill/SKILL.md ~/.claude/skills/prawo-pl/SKILL.md`]
+ ],
+ warns:[],
+ notes:["Plik `SKILL.md` ma mieć ok. 500 linii maksymalnie; szczegóły dawaj w plikach pomocniczych.","W claude.ai upload wymaga poprawnych wartości `name` i `description` (niedozwolone znaki powodują błąd)."],
+ src:[["https://support.claude.com/en/articles/12512180-use-skills-in-claude"],["https://code.claude.com/docs/en/skills"]]},
+
+{id:"claude-projects",g:"claude",name:"Claude Projects (instrukcje projektu)",tag:"same instrukcje",conf:"part",
+ why:"Artykuł pomocy o projektach nie mówi, czy konektory działają wewnątrz projektów – sprawdź w interfejsie po wejściu do czatu projektu.",
+ verified:"2026-10-11",plan:"Free (do 5 projektów) i płatne",url:"",
+ intro:"Projekty pozwalają zapisać instrukcje obowiązujące we wszystkich czatach projektu. To nie jest Skill i nie ma automatycznej aktualizacji. Połączenie z danymi nadal wymaga konektora MCP.",
+ steps:[
+  "Otwórz projekt (lub utwórz nowy w sekcji Projects).",
+  "Kliknij **Set project instructions**, wklej prompt z sekcji „Prompt do wklejenia” i **Save instructions**.",
+  "Wiedza projektu (po prawej stronie, **+**): wgraj najwyżej krótką instrukcję użycia. Nie wgrywaj całych baz przepisów.",
+  "Konektor MCP włączasz w rozmowie przez **+ → Connectors** – sprawdź w czacie projektu, czy przełącznik jest dostępny."
+ ],
+ snips:[],warns:[],notes:[],
+ src:[["https://support.claude.com/en/articles/9519177-how-can-i-create-and-manage-projects"]]},
+
+/* ============================ GEMINI ============================ */
+{id:"antigravity",g:"gemini",name:"Google Antigravity (CLI „agy”, IDE)",tag:"najrealniejsza droga dla konta indywidualnego",conf:"ok",verified:"2026-10-11",
+ plan:"dostępny dla wszystkich od 19.05.2026; logowanie kontem Google lub Business; cennik: strona „Plans and AI credits”",url:"mcp",
+ intro:"Antigravity CLI zastąpił Gemini CLI dla kont indywidualnych. Konfiguracja MCP leży w pliku JSON z kluczem `serverUrl`. Schemat jest INNY niż w Gemini CLI.",
+ steps:[
+  "Instalacja CLI. Windows PowerShell: `irm https://antigravity.google/cli/install.ps1 | iex`; macOS/Linux: `curl -fsSL https://antigravity.google/cli/install.sh | bash`. Plik binarny: `~/.local/bin/agy` (macOS/Linux) lub `C:\\Users\\<użytkownik>\\AppData\\Local\\agy\\bin` (Windows).",
+  "Uruchom `agy` w katalogu projektu; pierwsze uruchomienie przeprowadzi przez logowanie.",
+  "Edytuj plik: globalny `~/.gemini/config/mcp_config.json` (Windows: `%USERPROFILE%\\.gemini\\config\\mcp_config.json`) albo projektowy `.agents/mcp_config.json` (nadpisuje). Wklej snippet z kluczem `serverUrl`. Dokumentacja NIE opisuje komendy typu „agy mcp add”.",
+  "Weryfikacja: w panelu wpisz `/mcp` i Enter – otworzy się MCP Manager (statusy, przeładowanie konfiguracji, logi połączenia).",
+  "IDE: „…” u góry panelu agenta → MCP Servers → Manage MCP Servers → View raw config, edytuj `mcp_config.json` i zapisz.",
+  "Uprawnienia: narzędzia MCP działają domyślnie w trybie Ask (każde wymaga zgody). Reguła zezwalająca na wszystkie narzędzia serwera ma postać `mcp(prawo_pl/*)` (komenda `/permissions`; dokumentacja nie opisuje dokładnie, gdzie ją wpisać).",
+  "Migracja ze starej konfiguracji Gemini CLI: `agy plugin import gemini`."
+ ],
+ snips:[
+  ["mcp_config.json","json",R`
+{
+  "mcpServers": {
+    "prawo_pl": {
+      "serverUrl": "__BASE__/api/mcp"
+    }
+  }
+}`],
+  ["Z kluczem API (tylko tryb zamknięty)","json",R`
+{
+  "mcpServers": {
+    "prawo_pl": {
+      "serverUrl": "__BASE__/api/mcp",
+      "headers": { "Authorization": "Bearer TWOJ_KLUCZ" }
+    }
+  }
+}`,true]
+ ],
+ warns:["Dla serwerów zdalnych używaj pola `serverUrl`. Stare pola `url` i `httpUrl` z Gemini CLI NIE są tu obsługiwane. Nazwa serwera bez myślnika (`prawo_pl`) – nie sprawdzono, czy myślnik jest dozwolony."],
+ notes:["Pole `type` nie jest udokumentowane. Obsługa pola `headers` w tym pliku nie jest pokazana w przeczytanej dokumentacji – snippet z kluczem traktuj jako niezweryfikowany.","Nie ma pełnego parytetu funkcji z Gemini CLI (wg bloga Google). Nie testowano z naszym wdrożonym serwerem."],
+ src:[["https://antigravity.google/docs/mcp"],["https://antigravity.google/docs/mcp?tab=cli"],["https://antigravity.google/docs/getting-started?tab=cli"],["https://antigravity.google/docs/cli/gcli-migration"],["https://developers.googleblog.com/en/an-important-update-transitioning-gemini-cli-to-antigravity-cli/"]]},
+
+{id:"gemini-cli",g:"gemini",name:"Gemini CLI (płatne klucze API, Enterprise)",tag:"dla kont indywidualnych zastąpiony przez Antigravity",conf:"ok",verified:"2026-10-11",
+ plan:"od 18.06.2026 tylko płatne klucze API Gemini oraz klienci Gemini Code Assist Standard/Enterprise; wymaga Node.js 20+",url:"mcp",
+ intro:"Według komunikatu Google od 18.06.2026 Gemini CLI przestał obsługiwać użytkowników Google AI Pro/Ultra i darmowych indywidualnych użytkowników Code Assist – zastąpił go Antigravity CLI. Metody logowania wymienione w dokumentacji: konto Google, klucz GEMINI_API_KEY z AI Studio, Vertex AI; strona nie precyzuje, które nadal działają dla kont indywidualnych.",
+ steps:[
+  "Instalacja (jeśli masz do niego dostęp): `npm install -g @google/gemini-cli`.",
+  "Opcja A – komenda: `gemini mcp add --transport http …` (domyślny zakres to project; `-s user` robi wpis globalny).",
+  "Opcja B – ręcznie w `~/.gemini/settings.json` (globalnie) lub `.gemini/settings.json` (projekt). W tym narzędziu `httpUrl` oznacza Streamable HTTP, a `url` – SSE, więc użyj `httpUrl`.",
+  "Uruchom ponownie Gemini CLI. Sprawdź: w sesji `/mcp` (statusy CONNECTED / CONNECTING / DISCONNECTED), poza sesją `gemini mcp list`. Usuwanie: `gemini mcp remove prawo_pl`.",
+  "Użycie: pytaj po polsku, np. „Co mówi art. 118 KC? Użyj narzędzi prawo_pl.”"
+ ],
+ snips:[
+  ["Komenda","bash",R`gemini mcp add --transport http --scope user --timeout 30000 --trust prawo_pl __BASE__/api/mcp`],
+  ["~/.gemini/settings.json","json",R`
+{
+  "mcpServers": {
+    "prawo_pl": {
+      "httpUrl": "__BASE__/api/mcp",
+      "timeout": 30000,
+      "trust": true
+    }
+  }
+}`],
+  ["Z kluczem API (tylko tryb zamknięty)","bash",R`gemini mcp add --transport http --header "Authorization: Bearer TWOJ_KLUCZ" prawo_pl __BASE__/api/mcp`]
+ ],
+ warns:["`trust: true` pomija potwierdzenia wywołań narzędzi – tu bezpieczne, bo narzędzia są tylko do odczytu, ale domyślnie jest `false`."],
+ notes:["Dokumentacja nie opisuje pola `type`. Domyślny timeout 600000 ms.","Jeśli parser zgłasza błąd w JSON, sprawdź przecinki i brak komentarzy."],
+ src:[["https://geminicli.com/docs/tools/mcp-server/"],["https://geminicli.com/docs/cli/tutorials/mcp-setup/"],["https://geminicli.com/docs/get-started/installation/"],["https://geminicli.com/docs/get-started/authentication/"],["https://developers.googleblog.com/en/an-important-update-transitioning-gemini-cli-to-antigravity-cli/"]]},
+
+{id:"gemini-api-mcp",g:"gemini",name:"Gemini API: zdalny MCP (Interactions API)",tag:"dla programistów; do przetestowania",conf:"part",
+ why:"Składnia złożona z udokumentowanych pól, ale nieuruchomiona. Dwie strony dokumentacji Google są ze sobą sprzeczne co do modeli Gemini 3 (patrz uwaga). Odczyt tekstu odpowiedzi z obiektu interaction nie został zweryfikowany.",
+ verified:"2026-10-11",plan:"klucz API z Google AI Studio",url:"mcp",
+ intro:"Strona o function calling opisuje narzędzie typu `mcp_server` w Interactions API: pola `type`, `name`, `url`, `headers`, `allowed_tools`. Obsługiwane są tylko serwery Streamable HTTP (SSE nie).",
+ steps:[
+  "Pobierz klucz w Google AI Studio i ustaw `GEMINI_API_KEY`.",
+  "`pip install google-genai`.",
+  "Wywołaj `client.interactions.create` z narzędziem `mcp_server` wskazującym na nasz adres. Nazwa serwera: snake_case, BEZ myślnika.",
+  "Jeśli dostaniesz błąd o braku wsparcia zdalnego MCP dla modelu Gemini 3, spróbuj starszego modelu z listy obsługiwanych w Interactions (np. `gemini-2.5-flash`) albo użyj wpisu „Gemini API: function calling”."
+ ],
+ snips:[["Python","python",R`
+from google import genai
+
+client = genai.Client()  # czyta GEMINI_API_KEY ze zmiennej środowiskowej
+
+interaction = client.interactions.create(
+    model="gemini-3.8-flash",   # nazwa z przykładów w dokumentacji – sprawdź aktualną
+    input="Co mówi art. 118 Kodeksu cywilnego o przedawnieniu? Podaj datę stanu danych.",
+    tools=[{
+        "type": "mcp_server",
+        "name": "prawo_pl",
+        "url": "__BASE__/api/mcp",
+        # "headers": {"Authorization": "Bearer TWOJ_KLUCZ"},   # tylko tryb zamknięty
+        # "allowed_tools": ["search_law", "get_article", "get_act"],
+    }],
+)
+print(interaction)  # struktura odpowiedzi – sprawdź w dokumentacji Interactions`,true]],
+ warns:["**Sprzeczność w dokumentacji Google:** strona Interactions API w sekcji Limitations ma zdanie „Remote MCP: Gemini 3 does not support remote MCP, this is coming soon”, a przykład na stronie function calling używa modelu Gemini 3.x. Nie da się rozstrzygnąć, która jest aktualna – trzeba przetestować."],
+ notes:["Serwer musi być publicznie osiągalny z infrastruktury Google."],
+ src:[["https://ai.google.dev/gemini-api/docs/function-calling"],["https://ai.google.dev/gemini-api/docs/interactions"],["https://ai.google.dev/gemini-api/docs/changelog"]]},
+
+{id:"gemini-api-fn",g:"gemini",name:"Gemini API: function calling z REST (Python)",tag:"najpewniejsza droga programistyczna",conf:"part",
+ why:"Wzorzec (zwykłe funkcje Pythona w tools, automatic function calling) pochodzi z README SDK, ale snippet nie był uruchomiony na żywym API.",
+ verified:"2026-10-11",plan:"klucz API z Google AI Studio",url:"rest",
+ intro:"Nie zależy od eksperymentalnych funkcji MCP: trzy cienkie funkcje wołają nasze REST, a SDK samo generuje deklaracje i wywołuje je automatycznie.",
+ steps:[
+  "`pip install google-genai requests`, ustaw `GEMINI_API_KEY`.",
+  "Skopiuj snippet. Operacje REST: `searchLaw` (`GET /api/search?q=`), `getArticle` (`GET /api/article?id=&art=`), `getAct` (`GET /api/act?id=`).",
+  "Instrukcja systemowa wymusza podanie `data_as_of`.",
+  "Uwaga z README SDK: w następnej wersji głównej automatic function calling z bezpośrednich wywołań `generate_content` ma zniknąć – wtedy użyj `Chats` albo ręcznej pętli."
+ ],
+ snips:[["Python","python",R`
+import requests
+from google import genai
+from google.genai import types
+
+BASE = "__BASE__"
+HEADERS = {}  # {"x-api-key": "..."} tylko w trybie zamkniętym
+
+def search_law(q: str) -> dict:
+    """Wyszukuje w polskich przepisach prawa. Zwraca wyniki i pole data_as_of."""
+    return requests.get(f"{BASE}/api/search", params={"q": q}, headers=HEADERS, timeout=30).json()
+
+def get_article(id: str, art: str) -> dict:
+    """Pobiera treść artykułu aktu prawnego (id aktu np. DU/1964/93, numer artykułu)."""
+    return requests.get(f"{BASE}/api/article", params={"id": id, "art": art}, headers=HEADERS, timeout=30).json()
+
+def get_act(id: str) -> dict:
+    """Pobiera metadane aktu prawnego."""
+    return requests.get(f"{BASE}/api/act", params={"id": id}, headers=HEADERS, timeout=30).json()
+
+client = genai.Client()
+response = client.models.generate_content(
+    model="gemini-flash-latest",
+    contents="Co mówi art. 118 Kodeksu cywilnego? Podaj datę stanu danych.",
+    config=types.GenerateContentConfig(
+        tools=[search_law, get_article, get_act],
+        system_instruction="Zawsze podawaj datę stanu danych (data_as_of) z odpowiedzi narzędzia. Nie zgaduj treści przepisów.",
+    ),
+)
+print(response.text)`,true]],
+ warns:[],
+ notes:["Obsługiwany jest tylko podzbiór schematu OpenAPI; typy parametrów w Pythonie są ograniczone.","Nazwy parametrów REST (`q`, `id`, `art`) odpowiadają `/openapi.json`."],
+ src:[["https://ai.google.dev/gemini-api/docs/function-calling"],["https://github.com/googleapis/python-genai"]]},
+
+{id:"gemini-sdk-mcp",g:"gemini",name:"SDK google-genai: sesja klienta MCP (eksperymentalne)",tag:"kombinacja dwóch źródeł",conf:"part",
+ why:"Przykłady w README Google pokazują tylko serwer stdio. Połączenie Streamable HTTP + ClientSession z google-genai to kombinacja dwóch źródeł, niesprawdzona; nazwa funkcji klienta HTTP zależy od wersji pakietu mcp.",
+ verified:"2026-10-11",plan:"klucz API z Google AI Studio",url:"mcp",
+ intro:"Wbudowana obsługa MCP w SDK jest eksperymentalna: SDK przyjmuje lokalnie utworzoną sesję klienta MCP jako narzędzie. To KLIENT MCP działający u Ciebie w skrypcie, a nie bezpośrednie wsparcie API dla zdalnych serwerów.",
+ steps:["`pip install google-genai mcp`.","Połącz się z serwerem klientem MCP po Streamable HTTP, wywołaj `session.initialize()` i przekaż `tools=[session]` w `GenerateContentConfig`.","Jeśli to nie działa – użyj wpisu „Gemini API: function calling”."],
+ snips:[["Python","python",R`
+import asyncio
+from mcp import ClientSession
+from mcp.client.streamable_http import streamablehttp_client  # w nowszych wersjach: streamable_http_client
+from google import genai
+from google.genai import types
+
+client = genai.Client()
+
+async def main():
+    async with streamablehttp_client("__BASE__/api/mcp") as (read, write, _):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            response = await client.aio.models.generate_content(
+                model="gemini-flash-latest",
+                contents="Co mówi art. 118 Kodeksu cywilnego? Podaj datę stanu danych.",
+                config=types.GenerateContentConfig(tools=[session]),
+            )
+            print(response.text)
+
+asyncio.run(main())`,true]],
+ warns:["W najnowszej dokumentacji klienta MCP dla Pythona `streamable_http_client` nie przyjmuje już `headers=` ani `timeout=` – dostosuj do swojej wersji pakietu."],
+ notes:[],
+ src:[["https://github.com/googleapis/python-genai"],["https://github.com/googleapis/js-genai"],["https://py.sdk.modelcontextprotocol.io/client/transports/"]]},
+
+{id:"gemini-app",g:"gemini",name:"Aplikacja Gemini (gemini.google.com)",tag:"prawdopodobnie niedostępne z Polski",conf:"part",
+ why:"Oficjalna pomoc Google nie wspomina o serwerach bez OAuth i nie podaje planów subskrypcji; część szczegółów pochodzi ze źródeł trzecich. Nie obiecuj, że to zadziała.",
+ verified:"2026-10-11",plan:"warunki wg pomocy Google: konto osobiste (nie służbowe/szkolne), wiek 18+, lokalizacja w USA, włączone Keep Activity, tylko język angielski",url:"mcp",
+ intro:"Google pozwala dodać własną aplikację przez wpisanie adresu serwera MCP (Ustawienia → Connected Apps → Custom apps). Ze względu na warunek lokalizacji w USA użytkownik z Polski prawdopodobnie tej funkcji nie zobaczy. Najpierw sprawdź, czy opcja jest u Ciebie dostępna.",
+ steps:[
+  "Na komputerze wejdź na gemini.google.com i zaloguj się KONTEM OSOBISTYM Google.",
+  "Upewnij się, że Keep Activity jest włączone (bez tego własne aplikacje są niedostępne; według źródła trzeciego autoryzacja może się udać, a połączenie pozostanie nieaktywne bez błędu).",
+  "Na dole kliknij **Settings → Connected Apps**. Jeśli nie widzisz tej pozycji, źródło trzecie podpowiada sprawdzić sekcję Personal Intelligence.",
+  "W sekcji **Custom apps** kliknij **Add a custom app** i wpisz adres serwera (bez zbędnego ukośnika na końcu – źródło trzecie ostrzega, że może zepsuć połączenie).",
+  "Jeśli serwer nie wspiera Dynamic Client Registration, kliknij **Show more** przy Advanced features i wpisz dane uwierzytelniające. Nasz serwer domyślnie NIE ma OAuth, więc ten krok może być przeszkodą.",
+  "Kliknij **Next** i postępuj zgodnie z instrukcjami na ekranie.",
+  "Użycie: w oknie rozmowy wpisz `@` i wybierz swoją aplikację. Odłączanie/usuwanie: Custom apps → More details → Disconnect / Remove app."
+ ],
+ snips:[["Przykładowe polecenie (po angielsku, bo funkcja działa tylko po angielsku)","text",R`
+@Prawo PL Search Polish law: art. 118 of the Civil Code, limitation period. Always state the data_as_of date from the tool result.`]],
+ warns:["Nie znaleziono oficjalnego potwierdzenia, że serwer MCP BEZ uwierzytelniania zostanie zaakceptowany – trzeba przetestować po wdrożeniu. Nie ma pola na własne nagłówki, więc po włączeniu `API_KEY` ta droga przestanie działać.","Google ostrzega: nie kontroluje serwerów trzecich, a treść rozmowy może zostać przekazana do serwera – nie wpisuj danych osobowych."],
+ notes:["Narzędzia są tylko do odczytu, więc potwierdzenia akcji zapisu (wymagane przez Gemini) nie dotyczą."],
+ src:[["https://support.google.com/gemini/answer/17209137?hl=en&co=GENIE.Platform%3DDesktop","Pomoc Google: własne aplikacje (komputer)"],["https://support.google.com/gemini/answer/17209137?hl=en&co=GENIE.Platform%3DAndroid","Pomoc Google: własne aplikacje (Android)"],["https://tempreon.com/guides/add-mcp-server-to-gemini","Źródło trzecie (pomocniczo): Tempreon"]]},
+
+{id:"gemini-gems",g:"gemini",name:"Gemini: Gems / skills",tag:"NIE łączy się z API",conf:"part",
+ why:"Oficjalne źródła opisują Gems i skills jako zapisane instrukcje i pliki – żadne nie wspomina o wywoływaniu zewnętrznych narzędzi. Daty wygaszania podają też źródła trzecie, niezweryfikowane u Google.",
+ verified:"2026-10-11",plan:"Gems wygaszane: listopad 2026 (konta osobiste), marzec 2027 (Workspace business), czerwiec 2027 (Workspace education)",url:"",
+ intro:"Uczciwa odpowiedź: ani Gem, ani skill nie podłącza naszego MCP ani OpenAPI. Możesz zapisać instrukcje (np. prompt z sekcji „Prompt do wklejenia”), ale model nadal nie pobierze przepisów z naszego API.",
+ steps:[
+  "Wklej prompt w instrukcjach skilla (ścieżka z źródła trzeciego: Settings → Skills). Oficjalny blog nie podaje nazw menu.",
+  "Bez narzędzi model musi powiedzieć wprost, że nie może zweryfikować aktualnego brzmienia przepisu – dopisz to do instrukcji.",
+  "Nie buduj na Gems: wsparcie się kończy, a Gems mają być automatycznie migrowane do skills."
+ ],
+ snips:[["Przykładowa treść skilla (instrukcje, nie integracja)","text",R`
+Nazwa: Prawo PL
+Instrukcje: Odpowiadasz o prawie polskim. Nie zgaduj treści przepisów. Jeśli masz dostęp do narzędzi search_law/get_article/get_act – użyj ich i ZAWSZE podaj datę stanu danych (data_as_of). Jeśli nie masz narzędzi – powiedz wprost, że nie możesz zweryfikować aktualnego brzmienia przepisu.`]],
+ warns:[],notes:["Udostępnianie skills: blog Google mówi „wkrótce”, a źródło trzecie twierdzi, że dodano – sprzeczne, niepotwierdzone."],
+ src:[["https://gemini.google/overview/gems/"],["https://blog.google/products-and-platforms/products/gemini/automate-tasks-with-skills/"]]},
+
+{id:"gemini-aistudio",g:"gemini",name:"Google AI Studio (interfejs webowy)",tag:"brak potwierdzenia",conf:"mem",
+ why:"Nie znaleziono w dokumentacji ani w wynikach wyszukiwania potwierdzenia, że interfejs AI Studio pozwala dodać zdalny serwer MCP przez URL.",
+ verified:"2026-10-11",plan:"—",url:"",
+ intro:"AI Studio jest miejscem, skąd bierze się klucz API do wpisów o Gemini API. Z pamięci (niezweryfikowane): AI Studio ma ustawienie Function calling, gdzie można ręcznie wkleić deklaracje funkcji w JSON, ale samo wywołanie naszego API musiałbyś wykonać sam – model zwróci tylko żądanie wywołania funkcji.",
+ steps:["Wejdź na aistudio.google.com i użyj **Get API key**.","Dalej skorzystaj z wpisów „Gemini API: function calling” lub „Gemini API: zdalny MCP”.","Po wdrożeniu sprawdź bezpośrednio w interfejsie, czy pojawiła się opcja serwera MCP."],
+ snips:[],warns:[],notes:[],src:[]},
+
+{id:"google-adk",g:"gemini",name:"Google Agent Development Kit (ADK)",tag:"McpToolset lub OpenAPIToolset",conf:"ok",verified:"2026-10-11",
+ plan:"pip install \"google-adk[mcp]\", Python 3.10+; Python i TypeScript",url:"mcp",
+ intro:"W produkcji `McpToolset` musi być zdefiniowany SYNCHRONICZNIE w `agent.py`. Alternatywa: `OpenAPIToolset` ze specyfikacji `/openapi.json` (nazwy narzędzi z `operationId` w snake_case: `search_law`, `get_article`, `get_act`).",
+ steps:["`pip install \"google-adk[mcp]\"`; ustaw `GOOGLE_API_KEY` (klucz z AI Studio) lub dane Vertex.","Wklej snippet do `agent.py`. Filtruj narzędzia przez `tool_filter`.","Uruchom lokalnie: `adk web` z katalogu nadrzędnego względem folderu agenta.","Wdrożenie: `adk deploy agent_engine` – sprawdź aktualny opis na adk.dev (strona wdrożenia nie została przeczytana w całości)."],
+ snips:[["agent.py (MCP)","python",R`
+from google.adk.agents import LlmAgent
+from google.adk.tools.mcp_tool import McpToolset
+from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPConnectionParams
+
+root_agent = LlmAgent(
+    model="gemini-flash-latest",
+    name="prawo_pl",
+    instruction="Odpowiadasz o polskim prawie wyłącznie na podstawie narzędzi. Zawsze podawaj datę stanu danych (data_as_of). Nie zgaduj treści przepisów.",
+    tools=[
+        McpToolset(
+            connection_params=StreamableHTTPConnectionParams(
+                url="__BASE__/api/mcp",
+                # headers={"Authorization": "Bearer TWOJ_KLUCZ"},  # tylko tryb zamknięty
+                timeout=10,
+                sse_read_timeout=300,
+            ),
+            tool_filter=["search_law", "get_article", "get_act"],
+        )
+    ],
+)`],
+  ["Wariant OpenAPI","python",R`
+import urllib.request
+from google.adk.tools.openapi_tool.openapi_spec_parser.openapi_toolset import OpenAPIToolset
+
+spec = urllib.request.urlopen("__BASE__/openapi.json").read().decode()
+toolset = OpenAPIToolset(spec_str=spec, spec_str_type="json")`]],
+ warns:["Pole `servers` w `/openapi.json` jest względne (`/`). Jeśli narzędzie woła zły host, ustaw bazowy adres ręcznie."],
+ notes:["ADK nie odtwarza automatycznie połączeń MCP po przywróceniu stanu sesji.","Mechanizm `Tool.mcp_servers` w google-genai dla Agent Platform dotyczy serwerów z rejestru Google, nie dowolnego URL."],
+ src:[["https://adk.dev/tools-custom/mcp-tools/"],["https://adk.dev/tools-custom/openapi-tools/"]]},
+
+{id:"gemini-enterprise",g:"gemini",name:"Gemini Enterprise (dla administratorów organizacji)",tag:"opcja „No authentication” udokumentowana",conf:"ok",verified:"2026-10-11",
+ plan:"płatny produkt; konfiguruje administrator. Edycja Business: funkcja pre-GA. Edycje Standard/Plus/Pay-as-you-go/Frontline: konsola Google Cloud",url:"mcp",
+ intro:"To jedyna droga Google, w której oficjalna dokumentacja wprost opisuje serwer bez uwierzytelniania. Tylko transport Streamable HTTP, adres HTTPS z certyfikatem zaufanego urzędu (Vercel spełnia). Nie jest to droga dla osoby prywatnej.",
+ steps:[
+  "Edycja Business: zaloguj się na business.gemini.google → Settings & help → wybierz zespół → **Manage team → Connected apps → Add MCP Server**.",
+  "W „MCP info” wpisz Server URL i Name, **Next**, Authentication: **No authentication**, wybierz lokalizację konektora danych (Multi-region), wpisz nazwę magazynu danych, **Add**. Potem WŁĄCZ połączenie – domyślnie jest wyłączone i niewidoczne dla zespołu.",
+  "Edycje z konsolą Cloud: Gemini Enterprise → Data stores → Create data store → źródło **Custom MCP Server** → Add MCP server → No authentication, wpisz HTTPS URL, nazwij data store, **Create**; poczekaj, aż stan zmieni się z Creating na Active; włącz potrzebne akcje (domyślnie żadna nie jest włączona; do 100 naraz).",
+  "Wymagania wstępne (konsola Cloud): nadpisanie ograniczenia polityki organizacji blokującego Custom MCP data store; dodanie domeny do `allowedEgressFqdns` (sama nazwa domeny); rola Discovery Engine Editor; przy VPC Service Controls dodanie `custom_mcp` do dozwolonych źródeł."
+ ],
+ snips:[["Wartości do wpisania","text",R`
+Server URL:      __BASE__/api/mcp
+Name:            prawo_pl
+Authentication:  No authentication
+allowedEgressFqdns: (sama nazwa domeny z adresu wyżej)`]],
+ warns:[],
+ notes:["Nie można podłączyć istniejącego data store – trzeba utworzyć nowy.","Narzędzia z adnotacją `readOnlyHint` mogą pomijać potwierdzenie użytkownika; nasze narzędzia są tylko do odczytu (wniosek z dokumentacji, nie sprawdzony w kodzie serwera)."],
+ src:[["https://support.google.com/g/answer/17106276?hl=en"],["https://docs.cloud.google.com/gemini/enterprise/docs/connectors/custom-mcp-server/set-up-custom-mcp-server"]]},
+
+/* ============================ OPENAI ============================ */
+{id:"chatgpt-plugin",g:"openai",name:"ChatGPT: wtyczka z własnym serwerem MCP",tag:"zalecana dla ChatGPT",conf:"part",
+ why:"Oficjalna strona OpenAI potwierdza protokoły (SSE, streaming HTTP) i tryb „No authentication”, ale NIE podaje wymaganych planów ani aktualnych etykiet menu. Plany (Plus, Pro, Business, Enterprise, Edu) pochodzą ze źródeł zewnętrznych; jedno niepotwierdzone źródło twierdzi, że przełącznik Developer mode usunięto około 5.10.2026.",
+ verified:"2026-10-11",plan:"tylko wersja webowa (nie mobile, nie Advanced Voice); zasady workspace i Lockdown mogą blokować własne serwery",url:"mcp",
+ intro:"W lipcu 2026 „apps” przemianowano w ChatGPT na „plugins”. Własny serwer MCP dodajesz jako wtyczkę.",
+ steps:[
+  "Upewnij się, że serwer jest publiczny pod HTTPS (adres z ramki powyżej).",
+  "Wejdź na chatgpt.com/plugins (ChatGPT w przeglądarce). Starsze poradniki: Settings → Apps → Advanced settings → Developer mode.",
+  "Kliknij plus (ikona „+”, bywa trudna do znalezienia), następnie **Add custom MCP server**.",
+  "Wpisz nazwę (np. `Prawo PL`) i opis – opis pomaga modelowi wybrać narzędzie.",
+  "W sekcji Connection wpisz **Server URL** (adres z ramki powyżej). Opcja „Tunnel” dotyczy serwerów prywatnych – nie jest potrzebna.",
+  "Authentication: **No authentication**.",
+  "Zaznacz potwierdzenie ostrzeżenia o ryzyku („I understand and want to continue”) i kliknij **Create as a plugin**.",
+  "Sprawdź wykryte narzędzia (`search_law`, `get_article`, `get_act`). Po zmianie narzędzi na serwerze: w ustawieniach wtyczki kliknij **Refresh** i zacznij nową rozmowę.",
+  "Zainstaluj wtyczkę. W nowej rozmowie wpisz `@` i wybierz ją. Przy pierwszym użyciu może pojawić się „Connect” i okno zgody."
+ ],
+ snips:[["Opis wtyczki","text",R`
+Nazwa: Prawo PL
+Opis: Wyszukiwarka polskiego prawa (Dz.U., M.P.) - przepisy, artykuły, akty. Zawsze podawaj datę stanu danych (data_as_of).
+Server URL: __BASE__/api/mcp
+Authentication: No authentication`],
+ ["Przykładowy prompt","text",R`
+@Prawo PL Użyj narzędzia search_law i znajdź przepisy o wypowiedzeniu umowy o pracę; potem get_article dla wskazanego artykułu. Podaj stan danych.`]],
+ warns:["**Klucz API:** UI oferuje tylko OAuth / No authentication / tryb mieszany – NIE ma pola na nagłówek Bearer ani `x-api-key`. Jeśli kiedyś włączysz `API_KEY`, ta wtyczka przestanie działać; zostaw serwer publiczny.","Bez adnotacji `readOnlyHint` przy narzędziach ChatGPT traktuje je jako zapisujące i może prosić o potwierdzenie każdego wywołania."],
+ notes:["Narzędzia `search`/`fetch` nie są wymagane dla zwykłych własnych serwerów (wymagają ich tylko deep research i company knowledge).","Na planach Workspace administrator musi dopuścić własne serwery (według źródeł zewnętrznych: Workspace Settings → Permissions & Roles → Connected Data)."],
+ src:[["https://developers.openai.com/api/docs/guides/custom-mcp-server"],["https://developers.openai.com/api/docs/mcp"],["https://developers.openai.com/apps-sdk/deploy/connect-chatgpt"],["https://til.simonwillison.net/llms/mcp-in-claude-and-chatgpt","Źródło pomocnicze: notatki S. Willisona"]]},
+
+{id:"chatgpt-gpt",g:"openai",name:"ChatGPT: Custom GPT z Actions (OpenAPI) – wygaszane",tag:"rozwiązanie przejściowe",conf:"part",
+ why:"Informacja o wygaszaniu pochodzi z relacji prasowej (Virtualization Review, 28.09.2026), nie z oficjalnej strony OpenAI. help.openai.com zwracał błąd 403, więc nazwy przycisków edytora i opcje schematu pochodzą z pamięci i streszczeń wyszukiwarki. Limity pochodzą z oficjalnej strony Actions.",
+ verified:"2026-10-11",plan:"edytor GPT wymaga płatnego planu (niepotwierdzone)",url:"rest",
+ intro:"OpenAI ogłosiło 11.09.2026 wygaszanie Custom GPT i zastąpienie ich „pluginami”. Daty podawane przez relacje: 26.10.2026 Enterprise przestaje tworzyć nowe GPT, 11.12.2026 planowane wygaszenie, 11.02.2027 przedłużenie dla części klientów Enterprise. Custom Actions nie migrują automatycznie. Dla nowych wdrożeń używaj wpisu o wtyczce MCP.",
+ steps:[
+  "ChatGPT w przeglądarce → Explore GPTs → Create (lub edytuj istniejący GPT) → zakładka **Configure**.",
+  "W sekcji Actions wybierz **Create new action**.",
+  "W polu schematu zaimportuj OpenAPI z URL (adres w ramce powyżej). Jeśli import z URL nie jest widoczny, otwórz `/openapi.json` i wklej treść.",
+  "Edytor powinien wykryć akcje `searchLaw`, `getArticle`, `getAct` (z `operationId`).",
+  "Authentication: **None** (nasze API jest domyślnie bez klucza). Przy włączonym `API_KEY`: API Key → Bearer.",
+  "Privacy policy: wymagana tylko przy publicznych GPT (link lub GPT Store) z akcjami – potrzebny adres strony z polityką prywatności (tej strony trzeba by dopiero utworzyć). Dla GPT prywatnego niewymagane.",
+  "W polu Instructions wklej prompt z sekcji „Prompt do wklejenia”. Przetestuj w panelu Preview i zapisz."
+ ],
+ snips:[["Import schematu","text",R`
+__BASE__/openapi.json`]],
+ warns:["**Możliwy błąd „servers”:** w `/openapi.json` pole `servers` zawiera adres względny (`/`). Edytory GPT często wymagają bezwzględnego adresu – jeśli zobaczysz błąd o braku poprawnego URL w `servers`, wklej treść schematu zamiast importować z URL i ustaw tam `\"servers\": [{\"url\": \"__BASE__\"}]`."],
+ notes:["Limity Actions (oficjalna strona): 45 s na zapytanie; żądanie i odpowiedź poniżej 100 000 znaków; opis operacji do 300 znaków, opis parametru do 700; tylko tekst; niestandardowe nagłówki nie są wspierane; TLS 1.2+ na porcie 443.","Jeden GPT nie może według wyszukiwarki używać jednocześnie actions i apps."],
+ src:[["https://developers.openai.com/api/docs/actions/getting-started"],["https://developers.openai.com/api/docs/actions/production"],["https://developers.openai.com/api/docs/actions/authentication"],["https://virtualizationreview.com/articles/2026/09/28/openai-to-retire-custom-gpts-replace-them-with-plugins.aspx","Relacja prasowa (źródło wtórne)"]]},
+
+{id:"openai-responses",g:"openai",name:"OpenAI API: Responses API z narzędziem MCP",tag:"dla programistów",conf:"ok",verified:"2026-10-11",
+ plan:"klucz API OpenAI; narzędzie MCP w najnowszych modelach; transporty Streamable HTTP i HTTP/SSE",url:"mcp",
+ intro:"OpenAI łączy się z serwerem z chmury i wykonuje wywołania narzędzi. Pola `authorization` i `headers` są opcjonalne, więc serwer bez OAuth i bez klucza działa bez nich. Brak dodatkowych opłat za wywołanie narzędzia – płacisz tokeny.",
+ steps:[
+  "Ustaw `OPENAI_API_KEY`. Za `TU-AKTUALNY-MODEL` wstaw identyfikator z listy modeli w dokumentacji.",
+  "W `tools` dodaj `{type: \"mcp\", server_label, server_url, …}`. `allowed_tools` ogranicza import do trzech narzędzi (mniej tokenów i opóźnienia).",
+  "`require_approval`: domyślnie OpenAI prosi o zgodę przed wysłaniem danych do serwera (`mcp_approval_request`, odpowiadasz `mcp_approval_response`). Dla zaufanego, publicznego serwera tylko do odczytu ustaw `never`.",
+  "W odpowiedzi znajdziesz elementy `mcp_list_tools`, `mcp_call` (błędy w polu `error`) i `mcp_approval_request`.",
+  "Alternatywa bez MCP: function calling z własną pętlą – schematy w `ai/openai-actions/INSTRUCTIONS.md`."
+ ],
+ snips:[["curl","bash",R`
+curl https://api.openai.com/v1/responses \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -d '{
+    "model": "TU-AKTUALNY-MODEL",
+    "instructions": "Odpowiadaj na podstawie narzędzi prawa polskiego. Zawsze podaj stan danych (data_as_of).",
+    "tools": [{
+      "type": "mcp",
+      "server_label": "prawo_pl",
+      "server_description": "Wyszukiwarka polskiego prawa (Dz.U., M.P.).",
+      "server_url": "__BASE__/api/mcp",
+      "require_approval": "never",
+      "allowed_tools": ["search_law", "get_article", "get_act"]
+    }],
+    "input": "Co mówi art. 30 Kodeksu pracy o rozwiązaniu umowy?"
+  }'`],
+  ["Python (z kluczem API serwera tylko w trybie zamkniętym)","python",R`
+from openai import OpenAI
+client = OpenAI()
+resp = client.responses.create(
+    model="TU-AKTUALNY-MODEL",
+    tools=[{
+        "type": "mcp",
+        "server_label": "prawo_pl",
+        "server_url": "__BASE__/api/mcp",
+        "require_approval": "never",
+        # "headers": {"Authorization": "Bearer TWOJ_KLUCZ"},  # tylko tryb zamknięty
+    }],
+    input="Znajdź przepisy o urlopie wypoczynkowym.",
+)
+print(resp.output_text)`]],
+ warns:["Pole `headers` jest w referencji API („Optional HTTP headers to send to the MCP server”), ale poradnik go nie opisuje. Pole `authorization` to token OAuth i nie jest zapamiętywane."],
+ notes:["Limity: tier Build 1000 RPM, Launch/Grow 2000 RPM.","Zgodne z Zero Data Retention. Zapytania użytkownika trafiają do naszego serwera.","`connector_id` jest wycofywany dla modeli po 1.09.2026 – nas nie dotyczy."],
+ src:[["https://developers.openai.com/api/docs/guides/tools-connectors-mcp"],["https://developers.openai.com/api/reference/resources/responses/methods/create"],["https://developers.openai.com/api/docs/guides/function-calling"]]},
+
+{id:"openai-agents",g:"openai",name:"OpenAI Agents SDK (Python / TypeScript)",tag:"hostowany MCP lub lokalny klient",conf:"part",
+ why:"Konfigurację odczytano z dokumentacji SDK, ale nazwy pakietów pochodzą z pamięci, a dokładny kontrakt konstruktora w Pythonie nie został w całości potwierdzony.",
+ verified:"2026-10-11",plan:"klucz API OpenAI",url:"mcp",
+ intro:"Dwa tryby: hostowany (OpenAI łączy się z serwerem – wymaga publicznego URL) i lokalny (`MCPServerStreamableHttp` – Twój proces łączy się bezpośrednio).",
+ steps:["Instalacja: `pip install openai-agents` (Python) lub `npm install @openai/agents` (TypeScript) – nazwy z pamięci.","Wybierz tryb i skopiuj snippet.","Filtr narzędzi w trybie lokalnym (Python): `tool_filter=create_static_tool_filter(allowed_tool_names=[…])`."],
+ snips:[["Python, tryb lokalny","python",R`
+import asyncio
+from agents import Agent, Runner
+from agents.mcp import MCPServerStreamableHttp
+
+async def main():
+    async with MCPServerStreamableHttp(
+        name="prawo_pl",
+        params={"url": "__BASE__/api/mcp", "timeout": 10},
+        cache_tools_list=True,
+    ) as server:
+        agent = Agent(
+            name="Asystent prawa PL",
+            instructions="Korzystaj z narzędzi prawa. Zawsze podaj stan danych (data_as_of).",
+            mcp_servers=[server],
+        )
+        r = await Runner.run(agent, "Co mówi art. 8 Kodeksu pracy?")
+        print(r.final_output)
+
+asyncio.run(main())`,true],
+ ["TypeScript, tryb hostowany","ts",R`
+import { Agent, run, hostedMcpTool } from '@openai/agents';
+
+const agent = new Agent({
+  name: 'Asystent prawa PL',
+  instructions: 'Zawsze podaj stan danych (data_as_of).',
+  tools: [hostedMcpTool({
+    serverLabel: 'prawo_pl',
+    serverUrl: '__BASE__/api/mcp',
+    requireApproval: 'never',
+    allowedTools: ['search_law', 'get_article', 'get_act'],
+  })],
+});
+const res = await run(agent, 'Znajdź przepisy o urlopie wypoczynkowym.');
+console.log(res.finalOutput);`]],
+ warns:[],notes:["`cache_tools_list=True` tylko gdy lista narzędzi rzadko się zmienia (`invalidate_tools_cache()` wymusza odświeżenie).","W trybie lokalnym połączenie musi być otwarte i zamknięte (context manager / `connect`-`close`).","W Pythonie `allowed_tools` dla `HostedMCPTool` nie jest udokumentowane na przeczytanej stronie."],
+ src:[["https://openai.github.io/openai-agents-python/mcp/"],["https://openai.github.io/openai-agents-js/guides/mcp/"]]},
+
+{id:"codex-cli",g:"openai",name:"OpenAI Codex CLI",tag:"config.toml",conf:"ok",verified:"2026-10-11",
+ plan:"wymagane plany/wersje Codex: niesprawdzone",url:"mcp",
+ intro:"Serwer HTTP wymaga pola `url`. Według dokumentacji, jeśli żadne źródło poświadczeń nie jest dostępne, Codex łączy się bez uwierzytelniania – czyli nasz serwer działa bez OAuth i bez klucza.",
+ steps:[
+  "Otwórz lub utwórz `~/.codex/config.toml` (Windows prawdopodobnie `%USERPROFILE%\\.codex\\config.toml` – wniosek, nie z dokumentacji). Projektowo: `.codex/config.toml` (tylko zaufane projekty).",
+  "Dodaj tabelę `[mcp_servers.prawo_pl]` z kluczem `url`.",
+  "Weryfikacja: `codex mcp list`; w TUI `/mcp` pokazuje aktywne serwery.",
+  "Polecenie `codex mcp add` jest udokumentowane głównie dla stdio; dla HTTP pewniejsza jest edycja `config.toml` (sprawdź `codex mcp add --help`).",
+  "Do `AGENTS.md` projektu dopisz regułę: korzystaj z serwera prawo_pl i zawsze podawaj stan danych."
+ ],
+ snips:[["~/.codex/config.toml","toml",R`
+[mcp_servers.prawo_pl]
+url = "__BASE__/api/mcp"
+enabled_tools = ["search_law", "get_article", "get_act"]
+default_tools_approval_mode = "auto"
+startup_timeout_sec = 20
+tool_timeout_sec = 60
+
+# Tylko gdy na serwerze włączono API_KEY:
+# bearer_token_env_var = "PRAWO_API_KEY"
+# albo: http_headers = { "x-api-key" = "TWOJ_KLUCZ" }`]],
+ warns:[],notes:["`startup_timeout_sec` domyślnie 10, `tool_timeout_sec` domyślnie 60; `required = true` powoduje błąd startu, gdy serwer się nie zainicjuje.","Nie sprawdzono podkomend `get`/`remove`/`logout`."],
+ src:[["https://learn.chatgpt.com/docs/extend/mcp?surface=cli","Dokumentacja Codex (przekierowanie z developers.openai.com/codex/mcp)"]]},
+
+/* ============================ EDYTORY ============================ */
+{id:"cursor",g:"edytory",name:"Cursor",tag:"mcp.json",conf:"ok",verified:"2026-10-11",
+ plan:"transporty stdio, SSE i Streamable HTTP; admini zespołów mogą ograniczyć adresy (MCP Allowlist)",url:"mcp",
+ intro:"Zdalny serwer podajesz polem `url` – nasz bezstanowy Streamable HTTP bez uwierzytelniania działa bez dodatkowej konfiguracji.",
+ steps:[
+  "Wariant globalny: plik `~/.cursor/mcp.json` (Windows: `%USERPROFILE%\\.cursor\\mcp.json`). Wariant projektowy: `.cursor/mcp.json` w katalogu projektu.",
+  "Wklej konfigurację ze snippetu (klucz `mcpServers`).",
+  "Zapisz plik i sprawdź w sekcji **Customize** w panelu bocznym, czy serwer jest włączony i widać trzy narzędzia.",
+  "W razie problemów otwórz panel **Output** i wybierz **MCP Logs**."
+ ],
+ snips:[["mcp.json","json",R`
+{
+  "mcpServers": {
+    "prawo-pl": {
+      "url": "__BASE__/api/mcp"
+    }
+  }
+}`],["Z kluczem API (tylko tryb zamknięty)","json",R`
+{
+  "mcpServers": {
+    "prawo-pl": {
+      "url": "__BASE__/api/mcp",
+      "headers": { "Authorization": "Bearer %{env:PRAWO_API_KEY}" }
+    }
+  }
+}`]],
+ warns:[],notes:["Na koncie zespołowym domena może wymagać zatwierdzenia w MCP Allowlist (Team Settings).","Dokumentacja Cursora nie opisuje ścieżki Settings do dodania serwera; zarządzanie włączaniem jest w sekcji Customize."],
+ src:[["https://cursor.com/docs/context/mcp"]]},
+
+{id:"vscode",g:"edytory",name:"VS Code / GitHub Copilot (tryb Agent)",tag:".vscode/mcp.json",conf:"part",
+ why:"Format pliku jest udokumentowany, ale NIE potwierdzono minimalnej wersji VS Code, wymaganego planu Copilot ani nazwy polityki organizacyjnej „MCP servers in Copilot”.",
+ verified:"2026-10-11",plan:"niepotwierdzony; polityki organizacji Copilot Business/Enterprise mogą blokować MCP",url:"mcp",
+ intro:"Uwaga na format: główny klucz to `servers` (nie `mcpServers`) i trzeba podać `type: \"http\"`. VS Code próbuje HTTP, a przy braku wsparcia schodzi do SSE.",
+ steps:[
+  "Otwórz paletę poleceń i uruchom **MCP: Add Server** (kreator), albo ręcznie utwórz `.vscode/mcp.json` w projekcie (dobre do współdzielenia w repozytorium), albo **MCP: Open User Configuration** dla konfiguracji globalnej.",
+  "Wklej konfigurację ze snippetu i zapisz. Nad wpisem pojawi się przycisk uruchomienia; potwierdź zaufanie do serwera w oknie dialogowym.",
+  "Otwórz widok Chat, przełącz na tryb **Agent** i w polu czatu użyj **Configure Tools**, żeby sprawdzić, że `search_law`, `get_article`, `get_act` są włączone.",
+  "Przy kluczu API użyj sekcji `inputs` (promptString z `password: true`), żeby nie trzymać klucza w pliku."
+ ],
+ snips:[[".vscode/mcp.json","json",R`
+{
+  "servers": {
+    "prawo-pl": {
+      "type": "http",
+      "url": "__BASE__/api/mcp"
+    }
+  }
+}`],["Z kluczem API (tylko tryb zamknięty)","json",R`
+{
+  "inputs": [
+    { "type": "promptString", "id": "prawo-pl-key", "description": "Klucz API Prawo PL", "password": true }
+  ],
+  "servers": {
+    "prawo-pl": {
+      "type": "http",
+      "url": "__BASE__/api/mcp",
+      "headers": { "Authorization": "Bearer %{input:prawo-pl-key}" }
+    }
+  }
+}`]],
+ warns:[],notes:["Serwer spoza workspace wywołuje okno zaufania. VS Code może pytać o potwierdzenie każdego wywołania narzędzia."],
+ src:[["https://code.visualstudio.com/docs/copilot/customization/mcp-servers"],["https://code.visualstudio.com/docs/agents/reference/mcp-configuration"]]},
+
+{id:"windsurf",g:"edytory",name:"Windsurf (Cascade / Devin Desktop)",tag:"mcp_config.json",conf:"ok",verified:"2026-10-11",
+ plan:"transporty stdio, Streamable HTTP, SSE; Enterprise musi włączyć MCP ręcznie",url:"mcp",
+ intro:"Dokumentacja Windsurf została przeniesiona na docs.devin.ai i opisuje „Cascade/Devin Desktop” – produkt mógł zmienić nazwę, sprawdź przed publikacją.",
+ steps:[
+  "W panelu Cascade kliknij menu **…** (Actions) w prawym górnym rogu.",
+  "W sekcji MCPs kliknij ikonę **Open MCP config file**. Ścieżka wg dokumentacji: Windows `%APPDATA%\\devin\\mcp_config.json`, macOS/Linux `~/.config/devin/mcp_config.json`; starsze instalacje mogą używać `~/.codeium/windsurf/mcp_config.json` – przycisk otwiera właściwy plik.",
+  "Dodaj wpis pod `mcpServers` z polem `serverUrl` (lub `url`) i zapisz.",
+  "Sprawdź w sekcji MCPs, czy serwer jest włączony i widać trzy narzędzia."
+ ],
+ snips:[["mcp_config.json","json",R`
+{
+  "mcpServers": {
+    "prawo-pl": {
+      "serverUrl": "__BASE__/api/mcp"
+    }
+  }
+}`],["Z kluczem API (tylko tryb zamknięty)","json",R`
+{
+  "mcpServers": {
+    "prawo-pl": {
+      "serverUrl": "__BASE__/api/mcp",
+      "headers": { "Authorization": "Bearer %{env:PRAWO_API_KEY}" }
+    }
+  }
+}`]],
+ warns:[],notes:["Limit 100 narzędzi łącznie ze wszystkich serwerów; pojedyncze narzędzia wyłączysz w tablicy `disabledTools`.","W zespołach: po dodaniu choć jednego serwera do allowlisty wszystkie pozostałe są blokowane."],
+ src:[["https://docs.devin.ai/desktop/cascade/mcp"],["https://docs.windsurf.com/windsurf/cascade/mcp","Stary adres (przekierowuje)"]]},
+
+{id:"zed",g:"edytory",name:"Zed",tag:"context_servers",conf:"part",
+ why:"Dokumentacja Zed nie mówi wprost, czy transportem jest Streamable HTTP czy starszy SSE – nie potwierdzono tego.",
+ verified:"2026-10-11",plan:"—",url:"mcp",
+ intro:"Zdalny serwer dodajesz w interfejsie lub wpisem w `settings.json` pod `context_servers` (pola `url` i `headers`).",
+ steps:[
+  "Otwórz **Settings → AI → MCP Servers** (lub akcję `agent: open settings` i pozycję MCP Servers).",
+  "Kliknij **Add Server → Add Remote Server** i podaj adres (albo wpisz go ręcznie w `settings.json`).",
+  "Sprawdź wskaźnik obok nazwy serwera: zielona kropka z podpowiedzią „Server is active” oznacza, że działa.",
+  "Opcjonalnie ogranicz narzędzia profilem w `agent.profiles` z `enable_all_context_servers: false`."
+ ],
+ snips:[["settings.json","json",R`
+{
+  "context_servers": {
+    "prawo-pl": {
+      "url": "__BASE__/api/mcp"
+    }
+  }
+}`],["Z kluczem API (tylko tryb zamknięty)","json",R`
+{
+  "context_servers": {
+    "prawo-pl": {
+      "url": "__BASE__/api/mcp",
+      "headers": { "Authorization": "Bearer TWOJ_KLUCZ" }
+    }
+  }
+}`]],
+ warns:["Bez nagłówka Authorization Zed może uruchomić standardowy przepływ OAuth MCP. Nasz serwer go nie ma – jeśli Zed wymusi logowanie, dodaj dowolny nagłówek albo włącz klucz API i podaj Authorization."],
+ notes:["Uprawnienia narzędzi: `agent.tool_permissions.default` (domyślnie „confirm”); klucz pojedynczego narzędzia ma format `mcp:prawo-pl:search_law`."],
+ src:[["https://zed.dev/docs/ai/mcp"]]},
+
+{id:"cline",g:"edytory",name:"Cline (rozszerzenie VS Code / CLI)",tag:"streamableHttp",conf:"ok",verified:"2026-10-11",
+ plan:"—",url:"mcp",
+ intro:"Cline obsługuje Streamable HTTP (`streamableHttp`, zalecany) i SSE. Gdy pominiesz pole `type`, użyje starszego SSE – a nasz serwer to Streamable HTTP, więc `type` MUSI być ustawione jawnie.",
+ steps:[
+  "Szybkie dodanie w IDE: ikona **MCP Servers** na górnym pasku Cline → karta **Remote Servers** → nazwa i URL, transport **Streamable HTTP** → **Add Server**.",
+  "Albo JSON: ikona MCP Servers → karta **Configure** → **Configure MCP Servers**, dodaj wpis ze snippetu.",
+  "CLI: komenda ze snippetu (opcjonalnie `--header \"Authorization: Bearer KLUCZ\"`). Plik CLI: `~/.cline/data/settings/cline_mcp_settings.json` (zmienna `CLINE_MCP_SETTINGS_PATH` zmienia plik).",
+  "Sprawdź na liście serwerów, czy widać `search_law`, `get_article`, `get_act`."
+ ],
+ snips:[["cline_mcp_settings.json","json",R`
+{
+  "mcpServers": {
+    "prawo-pl": {
+      "type": "streamableHttp",
+      "url": "__BASE__/api/mcp",
+      "disabled": false,
+      "autoApprove": ["search_law", "get_article", "get_act"]
+    }
+  }
+}`],["Cline CLI","bash",R`cline mcp add prawo-pl __BASE__/api/mcp --transport http --yes`]],
+ warns:[],notes:["`autoApprove` zatwierdza automatycznie narzędzia tylko do odczytu; domyślnie Cline pyta o zgodę."],
+ src:[["https://docs.cline.bot/mcp/configuring-mcp-servers"]]},
+
+{id:"lmstudio",g:"edytory",name:"LM Studio (modele lokalne)",tag:"mcp.json",conf:"ok",verified:"2026-10-11",
+ plan:"od wersji 0.3.17",url:"mcp",
+ intro:"Format `mcp.json` jest zgodny z notacją Cursora. Model lokalny musi wspierać tool calling.",
+ steps:[
+  "Zaktualizuj LM Studio do wersji 0.3.17 lub nowszej.",
+  "W prawym pasku bocznym otwórz kartę **Program**, kliknij **Install** i wybierz **Edit mcp.json**.",
+  "Dodaj wpis pod `mcpServers` (jeśli plik ma już zawartość, wklej tylko wpis serwera).",
+  "Zapisz plik, w czacie włącz serwer i użyj modelu z obsługą tool calling."
+ ],
+ snips:[["mcp.json","json",R`
+{
+  "mcpServers": {
+    "prawo-pl": {
+      "url": "__BASE__/api/mcp"
+    }
+  }
+}`]],
+ warns:["Uważaj na okno kontekstu: pełne artykuły mogą być długie. Przy małym oknie (4-8 tys. tokenów) zadawaj wąskie pytania. Podłączaj tylko zaufane serwery."],
+ notes:["Dokumentacja nie precyzuje typu transportu ani obsługi OAuth."],
+ src:[["https://lmstudio.ai/docs/app/mcp"]]},
+
+/* ============================ INNE ============================ */
+{id:"perplexity",g:"inne",name:"Perplexity (aplikacja – własny konektor zdalny)",tag:"Settings → Connectors",conf:"part",
+ why:"Oficjalnego artykułu Help Center nie udało się odczytać (HTTP 403). Plany, formularz i opcję uwierzytelniania „None” znamy ze streszczeń wyszukiwarki i zewnętrznych przewodników; jedna instrukcja zewnętrzna twierdzi, że Perplexity wspiera tylko OAuth.",
+ verified:"2026-10-11",plan:"zewnętrzne źródła: Pro, Max, Enterprise (niepotwierdzone)",url:"mcp",
+ intro:"Perplexity wspiera własne zdalne konektory MCP. Dla naszego serwera prawdopodobnie wystarczy uwierzytelnianie „None”, ale tego nie potwierdzono na żywej stronie.",
+ steps:[
+  "Zaloguj się na perplexity.ai i otwórz **Account settings → All settings → Connectors**.",
+  "Kliknij **+ Custom connector** i wybierz **Remote**.",
+  "W formularzu wpisz nazwę, **MCP server URL** (adres z ramki powyżej), w ustawieniach Advanced: Authentication **None** (albo API Key, jeśli włączono klucz) i transport **Streamable HTTP**.",
+  "Zaznacz „I understand custom connectors can introduce risks” i kliknij **Add**.",
+  "W wątku włącz konektor – trzeba to zrobić w każdym wątku."
+ ],
+ snips:[["Pola formularza","text",R`
+Name:            Prawo PL
+MCP server URL:  __BASE__/api/mcp
+Authentication:  None
+Transport:       Streamable HTTP`],["Agent API (dla programistów, narzędzie na zapytanie)","json",R`
+{
+  "type": "mcp",
+  "server_label": "prawo_pl",
+  "server_url": "__BASE__/api/mcp",
+  "allowed_tools": ["search_law", "get_article", "get_act"]
+}`]],
+ warns:[],notes:["Na kontach Enterprise admin musi włączyć „Allow members to add custom connectors” (domyślnie wyłączone).","Aplikacje mobilne mogą pokazywać tylko gotowe konektory – dodaj na webie."],
+ src:[["https://docs.perplexity.ai/docs/agent-api/tools/mcp"],["https://docs.perplexity.ai/docs/agent-api/tools/connectors"],["https://www.conductor.com/docs/mcp/perplexity/","Źródło zewnętrzne (pomocniczo)"]]},
+
+{id:"mistral",g:"inne",name:"Mistral Le Chat (Custom MCP Connector)",tag:"Connectors",conf:"part",
+ why:"Odczytana strona dokumentacji opisuje produkt „Work”, a nie wprost Le Chat – nazwy menu mogą się różnić; zewnętrzne instrukcje podają inną ścieżkę (Intelligence → Connectors). help.mistral.ai zwrócił błąd.",
+ verified:"2026-10-11",plan:"funkcja tylko dla administratora; na planach Free, Pro i Student właściciel konta jest domyślnie administratorem",url:"mcp",
+ intro:"Dokumentacja Mistral opisuje automatyczne wykrywanie uwierzytelniania; wśród opcji jest „No authentication” dla publicznych lub zaufanych serwerów.",
+ steps:[
+  "W Le Chat otwórz stronę Connectors (wg zewnętrznych instrukcji: menu Intelligence → Connectors) – potrzebujesz roli administratora.",
+  "Kliknij **+ Add Connector** i przełącz na kartę **Custom MCP Connector**.",
+  "Wypełnij: Connector name (unikalna nazwa bez spacji i znaków specjalnych), Server URL (adres z ramki powyżej), opcjonalnie Description.",
+  "Kliknij **Connect**. Platforma wykryje brak uwierzytelniania; przy włączonym kluczu wybierz Bearer / API token.",
+  "W nowej rozmowie włącz konektor w narzędziach i przetestuj pytaniem o konkretny artykuł."
+ ],
+ snips:[["Pola formularza","text",R`
+Connector name:  prawo_pl
+Server URL:      __BASE__/api/mcp
+Description:     Polskie prawo: search_law, get_article, get_act (odpowiedzi zawierają data_as_of)`]],
+ warns:["Mistral ostrzega, że konektory MCP nie są jego produktami, a odpowiedzialność za zaufanie serwerowi spoczywa na użytkowniku. Zatwierdzaj wywołania ręcznie, „Always allow” dopiero po teście."],
+ notes:["Własne konektory nie wspierają jeszcze dynamic tool discovery, zasobów ani szablonów promptów (tylko narzędzia – nam wystarcza).","Serwer bez uwierzytelniania powinien odpowiedzieć 200 na pierwsze żądanie (streszczenie wyszukiwania)."],
+ src:[["https://docs.mistral.ai/le-chat/knowledge-integrations/connectors/mcp-connectors"],["https://docs.cloud.cdata.com/en/Clients/Mistral-Client","Źródło zewnętrzne (pomocniczo)"]]},
+
+{id:"copilot-studio",g:"inne",name:"Microsoft Copilot Studio",tag:"kreator MCP",conf:"ok",verified:"2026-10-11",
+ plan:"wymagania licencyjne nie zostały sprawdzone; tylko transport Streamable (SSE nieobsługiwane od sierpnia 2025)",url:"mcp",
+ intro:"Dwie drogi: kreator MCP (zalecany) albo własny konektor w Power Apps z plikiem OpenAPI (Swagger 2.0) z polem `x-ms-agentic-protocol: mcp-streamable-1.0`.",
+ steps:[
+  "Otwórz agenta w Copilot Studio i przejdź na stronę **Tools**.",
+  "Wybierz **Add a tool → New tool → Model Context Protocol** (uruchomi się kreator).",
+  "Wypełnij Server name, Server description (zwięzły opis – orkiestrator agenta decyduje po nim, kiedy wywołać narzędzia) i Server URL.",
+  "Uwierzytelnianie: **None** (albo API key → Header i nazwa `x-api-key`, jeśli włączono klucz). Kliknij **Create**.",
+  "W oknie Add tool wybierz **Create a new connection** (lub istniejące), potem **Add to agent**.",
+  "Alternatywa: Custom connector → w Power Apps „New custom connector” → „Import OpenAPI file” z YAML ze snippetu."
+ ],
+ snips:[["Pola kreatora","text",R`
+Server name:         Prawo PL
+Server description:  Wyszukuje przepisy polskiego prawa, zwraca treść artykułów i datę stanu danych.
+Server URL:          __BASE__/api/mcp
+Authentication:      None`],["Plik dla opcji z własnym konektorem (YAML, Swagger 2.0)","yaml",R`
+swagger: '2.0'
+info:
+  title: Polskie prawo
+  description: Serwer MCP z polskim prawem (search_law, get_article, get_act)
+  version: 1.0.0
+host: TWOJA-DOMENA.vercel.app
+basePath: /
+schemes:
+  - https
+paths:
+  /api/mcp:
+    post:
+      summary: Polskie prawo MCP
+      x-ms-agentic-protocol: mcp-streamable-1.0
+      operationId: InvokeMCP
+      responses:
+        '200':
+          description: Success`]],
+ warns:["W pliku YAML wpisz w `host` samą nazwę domeny (bez `https://`). Polityki DLP Power Platform mogą zablokować zewnętrzny, niezatwierdzony host."],
+ notes:["Nasz `/openapi.json` (OpenAPI 3.1) nie jest bezpośrednio zgodny z konektorem niestandardowym (przykład Microsoftu używa Swagger 2.0) – użyj kreatora MCP."],
+ src:[["https://learn.microsoft.com/en-us/microsoft-copilot-studio/mcp-add-existing-server-to-agent"]]},
+
+{id:"openwebui",g:"inne",name:"Open WebUI",tag:"MCP lub serwer OpenAPI",conf:"ok",verified:"2026-10-11",
+ plan:"natywne MCP od wersji v0.6.31, tylko Streamable HTTP; serwery MCP dodaje tylko administrator",url:"mcp",
+ intro:"Dwa sposoby: natywne MCP (Streamable HTTP) albo serwer narzędzi OpenAPI (nasz `/openapi.json`).",
+ steps:[
+  "MCP: zaloguj się jako administrator → **Settings → Admin → Integrations**.",
+  "W **External Tool Servers** kliknij **+ Add Connection**.",
+  "Ustaw **Type: MCP (Streamable HTTP)**, **Server URL** (adres z ramki), **Auth: None** (lub Bearer z kluczem w polu Key, jeśli włączono API_KEY). **Save** (restart, jeśli zażąda).",
+  "W czacie kliknij **+ → Integrations → Tools** i włącz narzędzie MCP.",
+  "Opcja OpenAPI: sekcja „Tools” (globalnie w Admin → Integrations, albo dla siebie w Settings → Integrations, z uprawnieniem Direct Tool Servers); podaj adres wdrożenia – operacje `searchLaw`, `getArticle`, `getAct` pochodzą z `/openapi.json`. Jeśli nie działa, spróbuj pełnego adresu `…/openapi.json`."
+ ],
+ snips:[["Formularz MCP","text",R`
+Type:        MCP (Streamable HTTP)
+Server URL:  __BASE__/api/mcp
+Auth:        None`],["Formularz OpenAPI (alternatywa)","text",R`
+URL:   __BASE__
+Spec:  /openapi.json   (operationId: searchLaw, getArticle, getAct)
+Auth:  None`]],
+ warns:["Wybór typu OpenAPI dla adresu MCP może zawiesić interfejs – dla `/api/mcp` wybierz MCP. Przy Auth „Bearer” z pustym kluczem wysyłany jest pusty nagłówek – dla trybu bez klucza wybierz „None”."],
+ notes:["Sekcja External Tool Servers jest wyszarzona, gdy `ENABLE_TOOL_SERVERS=False`.","Slabszy model może ignorować narzędzia; użyj modelu z dobrym tool callingiem."],
+ src:[["https://docs.openwebui.com/features/extensibility/mcp"],["https://docs.openwebui.com/features/extensibility/plugin/tools/openapi-servers/open-webui"]]},
+
+{id:"raycast",g:"inne",name:"Raycast",tag:"Install MCP Server",conf:"part",
+ why:"Podręcznik Raycast nie mówi, jak traktowane są serwery bez OAuth; jedna zewnętrzna strona twierdzi, że Raycast nie wspiera natywnie HTTP i trzeba mostka mcp-remote – sprzeczne z oficjalnym podręcznikiem.",
+ verified:"2026-10-11",plan:"strona MCP oznaczona „Pro Exclusive”; Desktop i iOS (iOS tylko HTTP)",url:"mcp",
+ intro:"Konfiguracja przez formularz (bez JSON).",
+ steps:[
+  "Otwórz Raycast i uruchom komendę **Install MCP Server** (albo Manage MCP Servers → Install New Server).",
+  "Ustaw nazwę i ikonę; Transport: **HTTP** (nie Standard Input/Output).",
+  "W polu URL wpisz adres z ramki. W „HTTP Headers” dodaj `Authorization: Bearer KLUCZ` tylko jeśli włączono klucz API.",
+  "Opcjonalnie wypełnij Custom Instructions, np. „Zawsze podawaj datę stanu danych (data_as_of) i cytuj artykuł”.",
+  "Naciśnij **Install MCP Server** (Cmd+Enter / Ctrl+Enter)."
+ ],
+ snips:[["Pola formularza","text",R`
+Name:                Prawo PL
+Transport:           HTTP
+URL:                 __BASE__/api/mcp
+HTTP Headers:        (puste albo Authorization: Bearer KLUCZ)
+Custom Instructions: Zawsze podawaj datę stanu danych (data_as_of) i cytuj artykuł.`]],
+ warns:[],notes:["Jeśli zobaczysz błąd, jako obejście można użyć mostka mcp-remote (niepotwierdzone)."],
+ src:[["https://manual.raycast.com/ai/model-context-protocol"]]},
+
+/* ============================ DOWOLNY MODEL ============================ */
+{id:"universal",g:"dowolny",name:"Dowolny model bez MCP (prompt + wywołania REST)",tag:"działa wszędzie, gdzie model ma narzędzie HTTP",conf:"own",verified:"2026-10-11",
+ plan:"model musi móc wykonać zapytanie HTTP (fetch/browse/function calling) – sam czat bez narzędzia API nie wywoła",url:"rest",
+ intro:"To nasz własny interfejs, więc nie ma dla niego zewnętrznej dokumentacji – sprawdź go testem połączenia. Wystarczy REST: `/api/search?q=`, `/api/article?id=&art=`, `/api/act?id=`, `/api/health`, specyfikacja OpenAPI 3.1 pod `/openapi.json` (operationId `searchLaw`, `getArticle`, `getAct`) i instrukcja dla modeli pod `/llms.txt`. CORS jest otwarty, więc działa też z przeglądarki.",
+ steps:[
+  "Wklej poniższy system prompt do ustawień modelu (system prompt, custom instructions, instrukcje projektu).",
+  "Włącz narzędzie HTTP/fetch/web albo zaimportuj `/openapi.json` jako akcje/narzędzia OpenAPI (n8n, Make, Zapier, narzędzia agentów).",
+  "Przetestuj pytaniem: „Co mówi art. 118 Kodeksu cywilnego?” – model powinien wywołać `/api/search` lub `/api/article` i podać datę stanu danych.",
+  "Gdy model nie ma dostępu do sieci: wklej mu odpowiedzi API ręcznie albo użyj `/llms.txt` przez przeglądanie."
+ ],
+ snips:[
+  ["System prompt dla modelu z narzędziem HTTP","text",R`
+Jesteś asystentem do polskiego prawa. Źródłem prawdy jest API: __BASE__ (bez klucza).
+Zasady:
+1. Przed odpowiedzią o przepisie wywołaj API, nie opieraj się na pamięci.
+2. Szukaj: GET __BASE__/api/search?q=<fraza>
+   Artykuł: GET __BASE__/api/article?id=<id_aktu>&art=<numer>
+   Akt: GET __BASE__/api/act?id=<id_aktu>
+   Stan: GET __BASE__/api/health
+   Specyfikacja OpenAPI: __BASE__/openapi.json ; instrukcja: __BASE__/llms.txt
+3. W każdej odpowiedzi podaj datę stanu danych z pola data_as_of (lub nagłówka X-Data-As-Of): "Stan danych na dzień ..." i zaznacz, że przepisy ogłoszone później nie są uwzględnione.
+4. Cytuj dokładnie: akt, artykuł, ustęp. Nie zmyślaj numerów ani treści; jeśli API nic nie zwróci, powiedz to wprost.
+5. To informacja, nie porada prawna; sprawdź aktualność w ISAP (isap.sejm.gov.pl).`],
+  ["Przykładowe wywołania","bash",R`
+curl -G "__BASE__/api/search" --data-urlencode "q=przedawnienie roszczeń"
+curl -G "__BASE__/api/article" --data-urlencode "id=DU/1964/93" --data-urlencode "art=118"
+curl "__BASE__/api/health"
+curl "__BASE__/data-info.json"`],
+  ["Z kluczem API (tylko tryb zamknięty)","bash",R`
+curl -H "Authorization: Bearer TWOJ_KLUCZ" "__BASE__/api/health"
+# albo nagłówek x-api-key: TWOJ_KLUCZ`],
+  ["Test serwera MCP z linii poleceń","bash",R`
+curl -s __BASE__/api/mcp \
+  -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`]
+ ],
+ warns:["Limity: ok. 60 żądań/min/IP dla wyszukiwania i 120 dla pozostałych; po przekroczeniu HTTP 429 z `Retry-After`. Każda odpowiedź zawiera `data_as_of` (REST także nagłówek `X-Data-As-Of`)."],
+ notes:["Identyfikatory: `eli` = `DU/1964/93`; `doc_id` = eli albo `eli#U` (tekst ujednolicony; w adresach `#` jako `%23`, albo parametr `variant=U`)."],
+ src:[]}
+];
+
+var QUICK=[
+  {t:"Rozmawiam z Claude w przeglądarce lub aplikacji",d:"Najprostsze: konektor, bez klucza i bez kodu.",go:"claude-web"},
+  {t:"Używam ChatGPT",d:"Wtyczka z własnym serwerem MCP (częściowo niezweryfikowane).",go:"chatgpt-plugin"},
+  {t:"Używam Gemini",d:"Uczciwie: aplikacja Gemini raczej nie z Polski. Realna droga: Antigravity lub API.",go:"antigravity"},
+  {t:"Programuję w edytorze",d:"Claude Code, Cursor lub VS Code.",go:"claude-code"},
+  {t:"Mam inny model lub własną aplikację",d:"Prompt + wywołania REST.",go:"universal"}
+];
+
+var TROUBLE=[
+ ["Test połączenia: „Nie udało się połączyć” (błąd sieci)","Najczęstsze przyczyny: literówka w adresie, brak HTTPS, wdrożenie jeszcze nie opublikowane, blokada CORS przez firewall albo wtyczkę przeglądarki. Otwórz `__BASE__/api/health` w nowej karcie – powinieneś zobaczyć JSON. Jeśli adres jest przykładowy (TWOJA-DOMENA), wpisz własny w polu „Twój adres wdrożenia”."],
+ ["claude.ai: „Couldn't reach the MCP server”","Adres musi być publiczny, HTTPS i kończyć się na `/api/mcp` (nie sama domena, nie `/sse`). Połączenie idzie z chmury Anthropic, nie z Twojego komputera, więc `localhost` nie zadziała. Sprawdź, czy wdrożenie nie jest chronione logowaniem Vercel (Deployment Protection – dotyczy zwykle adresów podglądu; użyj domeny produkcyjnej) i czy firewall nie blokuje zakresu `160.79.104.0/21`."],
+ ["Otwieram /api/mcp w przeglądarce i widzę błąd 405","To normalne: serwer MCP przyjmuje tylko POST (Streamable HTTP). Do sprawdzenia użyj przycisku testu na tej stronie lub komendy curl z wpisu „Dowolny model”."],
+ ["401 Unauthorized","Właściciel włączył tryb zamknięty (`API_KEY`). Podaj klucz: nagłówek `Authorization: Bearer KLUCZ` albo `x-api-key`. Uwaga: ChatGPT (wtyczka), aplikacja Gemini i część formularzy nie pozwalają ustawić nagłówka – wtedy API musi pozostać otwarte. Odpowiedź HTML zamiast JSON przy 401 oznacza zwykle ochronę wdrożenia Vercel, nie nasz klucz."],
+ ["429 Too Many Requests","Przekroczono limit żądań (ok. 60/min/IP dla wyszukiwania, 120 dla pozostałych). Poczekaj tyle sekund, ile wskazuje nagłówek `Retry-After`. Limit liczony jest per instancja funkcji, więc bywa nierówny."],
+ ["Timeout lub bardzo wolna pierwsza odpowiedź","Zimny start funkcji serverless – ponów po kilku sekundach. Jeśli powtarza się, sprawdź `/api/health` (pole `db`)."],
+ ["`/api/health` zwraca 503 lub db=false","Usługa działa, ale baza danych jest niedostępna (zmienna `DATABASE_URL`, limity Neon, uśpiona baza). To problem wdrożenia, nie klienta AI."],
+ ["Klient nie widzi narzędzi albo widzi stare","claude.ai: dodaj połączenie od nowa. ChatGPT: w ustawieniach wtyczki kliknij Refresh i zacznij nową rozmowę. Claude Code: `/mcp` → reconnect. Gemini CLI/Antigravity: `/mcp` i przeładowanie konfiguracji. Zmiany ustawień uwierzytelniania w claude.ai wymagają usunięcia i ponownego dodania konektora."],
+ ["Cline: błędy połączenia","Wpis musi mieć `\"type\": \"streamableHttp\"`. Bez tego Cline używa SSE."],
+ ["Claude Code: serwer z .mcp.json jest pomijany","Wpis musi mieć pole `type` (`\"http\"`). Wpis z samym `url` jest traktowany jak stdio. Zatwierdź serwer przy pierwszym użyciu; reset: `claude mcp reset-project-choices`."],
+ ["Antigravity nie widzi serwera","Użyj klucza `serverUrl` (nie `url` ani `httpUrl`) i nazwy bez myślnika. Plik globalny: `~/.gemini/config/mcp_config.json`. Sprawdź `/mcp`."],
+ ["Gemini API: „remote MCP not supported”","Dokumentacja Google jest niespójna co do modeli Gemini 3. Spróbuj starszego modelu z listy obsługiwanych w Interactions albo function calling z REST (wpis „Gemini API: function calling z REST”)."],
+ ["ChatGPT: błąd schematu „servers” (Custom GPT)","W `/openapi.json` pole `servers` jest względne (`/`). Wklej treść schematu zamiast importu z URL i ustaw tam bezwzględny adres wdrożenia. Dla nowych wdrożeń lepsza jest wtyczka MCP."],
+ ["ChatGPT ciągle prosi o potwierdzenie wywołań","Bez adnotacji `readOnlyHint` przy narzędziach serwera ChatGPT traktuje je jako zapisujące. To kwestia konfiguracji serwera MCP, nie Twojego konta."],
+ ["Model nie podaje „Stanu danych na dzień …”","Wklej prompt z sekcji „Prompt do wklejenia” jako instrukcje systemowe lub projektu. Model powinien brać datę z pola `data_as_of` odpowiedzi narzędzia."],
+ ["Model cytuje nieistniejący artykuł lub stare brzmienie","Poproś o weryfikację przez `get_article` i podanie `source_url`. Brak wyniku wyszukiwania nie oznacza braku przepisu. Artykuły oznaczone „(uchylony)” nie obowiązują. Aktualne brzmienie zawsze sprawdź w ISAP."],
+ ["Instrukcja nie zgadza się z tym, co widzę na ekranie","Interfejsy zmieniają się co kilka tygodni. Szukaj nazw opcji (np. Connectors, Add custom connector, No sign in) i sprawdź datę weryfikacji oraz link do dokumentacji przy wpisie. Właściciel repozytorium może poprosić Claude Code: „Uaktualnij to wszystko”."]
+];
+
+/* ---------- renderowanie ---------- */
+var state={group:null,client:null};
+var groupsEl=$("groups"),listEl=$("client-list"),detailEl=$("detail");
+
+function byId(id){for(var i=0;i<CLIENTS.length;i++)if(CLIENTS[i].id===id)return CLIENTS[i];return null;}
+
+function renderHelp(){
+  var h=$("help");h.textContent="";
+  QUICK.forEach(function(q){
+    var c=mk("div","card");
+    c.appendChild(mk("h4",null,q.t));c.firstChild.style.marginTop="0";
+    c.appendChild(mk("p",null,q.d));
+    var b=mk("button","small-btn","Pokaż instrukcję");b.type="button";
+    b.setAttribute("aria-label","Pokaż instrukcję: "+q.t);
+    b.addEventListener("click",function(){selectClient(q.go,true);});
+    c.appendChild(b);h.appendChild(c);
+  });
+}
+
+function renderGroups(){
+  groupsEl.textContent="";
+  GROUPS.forEach(function(g,i){
+    var b=mk("button",null);b.type="button";b.setAttribute("role","tab");b.id="tab-"+g.id;
+    b.setAttribute("aria-selected",state.group===g.id?"true":"false");
+    b.tabIndex=state.group===g.id||(!state.group&&i===0)?0:-1;
+    b.appendChild(document.createTextNode(g.name));b.appendChild(mk("small",null,g.sub));
+    b.addEventListener("click",function(){selectGroup(g.id);});
+    b.addEventListener("keydown",function(e){
+      var idx=GROUPS.indexOf(g),n=-1;
+      if(e.key==="ArrowRight")n=(idx+1)%GROUPS.length;else if(e.key==="ArrowLeft")n=(idx+GROUPS.length-1)%GROUPS.length;
+      else if(e.key==="Home")n=0;else if(e.key==="End")n=GROUPS.length-1;
+      if(n>=0){e.preventDefault();selectGroup(GROUPS[n].id);$("tab-"+GROUPS[n].id).focus();}
+    });
+    groupsEl.appendChild(b);
+  });
+  if(state.group)$("client-panel").setAttribute("aria-labelledby","tab-"+state.group);
+}
+
+function renderList(){
+  listEl.textContent="";
+  if(!state.group){listEl.appendChild(mk("li",null,"Wybierz rodzinę narzędzi powyżej."));return;}
+  CLIENTS.filter(function(c){return c.g===state.group;}).forEach(function(c){
+    var li=mk("li");
+    var b=mk("button","ghost",c.name);b.type="button";
+    b.setAttribute("aria-pressed",state.client===c.id?"true":"false");
+    b.addEventListener("click",function(){selectClient(c.id,true);});
+    li.appendChild(b);listEl.appendChild(li);
+  });
+}
+
+var booting=true;
+function setHash(h){if(booting)return;try{history.replaceState(null,"",location.pathname+location.search+h);}catch(e){}}
+function selectGroup(gid){
+  state.group=gid;state.client=null;detailEl.textContent="";
+  renderGroups();renderList();
+  setHash("#kreator");
+}
+
+function selectClient(id,focus){
+  var c=byId(id);if(!c)return;
+  state.group=c.g;state.client=id;
+  renderGroups();renderList();renderDetail(c,focus);
+  setHash("#k-"+id);
+}
+
+function snippetFig(s,clientName){
+  var fig=mk("figure","snip");
+  var cap=mk("figcaption");
+  var left=mk("span");rich(left,s[0]);
+  if(s[3]){left.appendChild(document.createTextNode(" "));left.appendChild(mk("span","tag-unv","(niezweryfikowane w żywej dokumentacji)"));}
+  cap.appendChild(left);
+  var code=sub(trim1(s[2]).split("%{").join("${"));
+  cap.appendChild(copyBtn(function(){return code;},s[0]));
+  fig.appendChild(cap);
+  var pre=mk("pre");var cd=mk("code");cd.style.background="none";cd.style.padding="0";cd.textContent=code;pre.appendChild(cd);
+  fig.appendChild(pre);
+  return fig;
+}
+
+function renderDetail(c,focus){
+  detailEl.textContent="";
+  var art=mk("article","card");
+  var h=mk("h3",null,c.name);h.id="detail-h";h.tabIndex=-1;art.appendChild(h);
+
+  var meta=mk("p","meta");
+  var cf=CONF[c.conf]||CONF.mem;
+  meta.appendChild(mk("span","badge "+cf.cls,cf.label));
+  meta.appendChild(mk("span",null,"Sprawdzono: "+pl(c.verified||VERIFIED)));
+  if(c.tag)meta.appendChild(mk("span",null,c.tag));
+  art.appendChild(meta);
+
+  if(c.conf==="part"||c.conf==="mem"){
+    var w=mk("div","callout warn");w.setAttribute("role","note");
+    var p=mk("p");p.appendChild(mk("strong",null,"Uwaga: niezweryfikowane w żywej dokumentacji. "));rich(p,c.why||"Część opisu pochodzi z pamięci lub źródeł pośrednich.");
+    w.appendChild(p);
+    w.appendChild(mk("p",null,"Traktuj kroki jako wskazówki i porównaj z tym, co widzisz na ekranie oraz z linkiem do dokumentacji poniżej."));
+    art.appendChild(w);
+  }else if(c.conf==="own"){
+    var w2=mk("div","callout");w2.setAttribute("role","note");
+    w2.appendChild(rp("p","To nasz własny interfejs – nie ma dla niego zewnętrznej dokumentacji. Sprawdź go [testem połączenia](#test)."));
+    art.appendChild(w2);
+  }
+
+  if(c.plan){var pp=mk("p");pp.appendChild(mk("strong",null,"Dostępność: "));rich(pp,c.plan);art.appendChild(pp);}
+  if(c.intro)art.appendChild(rp("p",c.intro));
+
+  if(c.url){
+    var box=mk("div","addr");
+    var lab=mk("span",null,c.url==="mcp"?"Adres serwera MCP (Streamable HTTP, bez logowania):":"Adres schematu OpenAPI:");lab.style.fontWeight="600";
+    box.appendChild(lab);
+    var row=mk("div","row");
+    var val=BASE+(c.url==="mcp"?"/api/mcp":"/openapi.json");
+    var pre=mk("pre",null,val);row.appendChild(pre);
+    row.appendChild(copyBtn(function(){return val;},"adres"));
+    box.appendChild(row);
+    if(c.url==="rest")box.appendChild(mk("span","hint","Do zwykłych wywołań REST użyj adresu: "+BASE+" (ścieżki /api/search, /api/article, /api/act)."));
+    art.appendChild(box);
+  }
+
+  if(c.steps&&c.steps.length){
+    art.appendChild(mk("h4",null,"Kroki"));
+    var ol=mk("ol","steps");
+    c.steps.forEach(function(s){ol.appendChild(rp("li",s));});
+    art.appendChild(ol);
+  }
+  if(c.snips&&c.snips.length){
+    art.appendChild(mk("h4",null,"Gotowe snippety"));
+    c.snips.forEach(function(s){art.appendChild(snippetFig(s,c.name));});
+  }
+  (c.warns||[]).forEach(function(t){
+    var wc=mk("div","callout warn");wc.setAttribute("role","note");wc.appendChild(rp("p",t));art.appendChild(wc);
+  });
+  if(c.notes&&c.notes.length){
+    art.appendChild(mk("h4",null,"Ograniczenia i uwagi"));
+    var ul=mk("ul","plain");c.notes.forEach(function(t){ul.appendChild(rp("li",t));});art.appendChild(ul);
+  }
+  var tn=mk("p");tn.appendChild(document.createTextNode("Po podłączeniu: wklej zapytanie testowe z sekcji "));
+  var ta=mk("a",null,"Prompt do wklejenia");ta.href="#prompt";tn.appendChild(ta);
+  tn.appendChild(document.createTextNode(" i uruchom "));var tb=mk("a",null,"test połączenia");tb.href="#test";tn.appendChild(tb);tn.appendChild(document.createTextNode(". Odpowiedź musi zawierać linię „Stan danych na dzień …”."));
+  art.appendChild(tn);
+
+  var srcs=c.src||[];
+  var sd=mk("div","src");
+  sd.appendChild(mk("strong",null,"Źródła dokumentacji (sprawdzono "+pl(c.verified||VERIFIED)+"):"));
+  if(srcs.length){
+    var su=mk("ul");
+    srcs.forEach(function(s){
+      var li=mk("li");var a=mk("a",null,s[1]||s[0].replace(/^https?:\/\//,""));a.href=s[0];a.target="_blank";a.rel="noopener noreferrer";
+      a.appendChild(mk("span","vh"," (otwiera się w nowej karcie)"));li.appendChild(a);su.appendChild(li);
+    });
+    sd.appendChild(su);
+  }else sd.appendChild(mk("span",null," brak – opis dotyczy naszego własnego interfejsu albo nie znaleziono dokumentacji."));
+  art.appendChild(sd);
+
+  detailEl.appendChild(art);
+  if(focus){try{h.focus({preventScroll:false});}catch(e){h.focus();}}
+}
+
+function renderTrouble(){
+  var t=$("trouble");t.textContent="";
+  TROUBLE.forEach(function(x){
+    var d=mk("details");var s=mk("summary",null,x[0]);d.appendChild(s);
+    var b=mk("div","body");b.appendChild(rp("p",x[1]));d.appendChild(b);t.appendChild(d);
+  });
+}
+
+/* ---------- adres: pole i ostrzeżenia ---------- */
+var baseIn=$("base-in"),baseWarn=$("base-warn"),baseHint=$("base-hint");
+function updateBaseUi(){
+  baseIn.value=BASE===PLACEHOLDER?"":BASE;
+  var msg="";
+  if(BASE===PLACEHOLDER)msg="Strona jest otwarta bez adresu http(s) (np. z pliku), więc snippety używają przykładowej domeny TWOJA-DOMENA.vercel.app. Wpisz adres swojego wdrożenia powyżej, żeby podstawić go wszędzie i włączyć test połączenia.";
+  else if(isLocalHost(BASE))msg="To adres lokalny. Zdalne usługi (claude.ai, ChatGPT, API Anthropic/OpenAI/Google) nie dotrą do niego – podłączysz je dopiero po wdrożeniu na Vercel. Programy uruchomione na tym samym komputerze (Claude Code, Cursor, Codex) mogą go używać już teraz.";
+  baseWarn.hidden=!msg;baseWarn.textContent=msg;
+}
+function applyBase(raw){
+  raw=String(raw||"").trim();
+  if(!raw){baseHint.textContent="Wpisz pełny adres, np. https://twoja-domena.vercel.app";return;}
+  if(!/^https?:\/\//i.test(raw))raw="https://"+raw;
+  var u;try{u=new URL(raw);}catch(e){baseHint.textContent="To nie wygląda na poprawny adres.";return;}
+  if(u.protocol!=="http:"&&u.protocol!=="https:"){baseHint.textContent="Dozwolone są tylko adresy http(s).";return;}
+  BASE=u.origin;baseHint.textContent="Używam adresu: "+BASE+" (ścieżki po domenie są pomijane).";
+  updateBaseUi();refreshViews();
+}
+baseIn.addEventListener("change",function(){applyBase(baseIn.value);});
+baseIn.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();applyBase(baseIn.value);}});
+
+function refreshViews(){
+  if(state.client){var c=byId(state.client);if(c)renderDetail(c,false);}
+  loadDataInfo();
+}
+
+/* ---------- data-info ---------- */
+function loadDataInfo(){
+  var url=(BASE===PLACEHOLDER?"":BASE)+"/data-info.json";
+  fetch(url,{cache:"no-cache"}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json();}).then(function(d){
+    if(d&&d.data_as_of){
+      var v=pl(d.data_as_of);
+      $("asof-val").textContent=v;$("asof-val2").textContent=v;
+    }
+    var ex=[];
+    if(d&&d.dz_u&&d.dz_u.latest_act)ex.push("Najnowszy Dz.U. w danych: "+d.dz_u.latest_act+(d.dz_u.latest_promulgation_date?" ("+pl(d.dz_u.latest_promulgation_date)+")":""));
+    if(d&&d.m_p&&d.m_p.latest_act)ex.push("najnowszy M.P.: "+d.m_p.latest_act+(d.m_p.latest_promulgation_date?" ("+pl(d.m_p.latest_promulgation_date)+")":""));
+    if(d&&d.last_update_run)ex.push("ostatnia aktualizacja: "+pl(d.last_update_run));
+    $("data-extra").textContent=ex.length?ex.join("; ")+".":"";
+  }).catch(function(){});
+}
+
+/* ---------- test połączenia ---------- */
+var testBtn=$("test-btn"),testOut=$("test-out"),testSum=$("test-sum");
+function addLine(kind,title,detail){
+  var li=mk("li");
+  var st=mk("span","st "+(kind==="ok"?"ok":kind==="bad"?"bad":kind==="wn"?"wn":"run"),kind==="ok"?"OK":kind==="bad"?"BŁĄD":kind==="wn"?"UWAGA":"…");
+  li.appendChild(st);li.appendChild(document.createTextNode(title));
+  if(detail){li.appendChild(mk("p","detail",detail));}
+  testOut.appendChild(li);
+  return li;
+}
+function setLine(li,kind,title,detail){
+  li.textContent="";
+  li.appendChild(mk("span","st "+(kind==="ok"?"ok":kind==="bad"?"bad":kind==="wn"?"wn":"run"),kind==="ok"?"OK":kind==="bad"?"BŁĄD":kind==="wn"?"UWAGA":"…"));
+  li.appendChild(document.createTextNode(title));
+  if(detail)li.appendChild(mk("p","detail",detail));
+}
+function http(url,opts,ms){
+  var ctl=typeof AbortController!=="undefined"?new AbortController():null;
+  var to=ctl?setTimeout(function(){ctl.abort();},ms||20000):null;
+  opts=opts||{};if(ctl)opts.signal=ctl.signal;opts.cache="no-store";
+  return fetch(url,opts).then(function(r){
+    return r.text().then(function(t){if(to)clearTimeout(to);return {status:r.status,ok:r.ok,text:t,ct:r.headers.get("content-type")||"",ra:r.headers.get("retry-after")};});
+  },function(e){
+    if(to)clearTimeout(to);
+    var timeout=e&&e.name==="AbortError";
+    var err=new Error(timeout?"timeout":"network");err.kind=timeout?"timeout":"network";throw err;
+  });
+}
+function netMsg(e){
+  if(e&&e.kind==="timeout")return "Brak odpowiedzi w 20 s (zimny start funkcji lub niedostępny serwer). Spróbuj ponownie.";
+  return "Nie udało się połączyć. Możliwe przyczyny: błędny adres, brak HTTPS, wdrożenie nieopublikowane, blokada CORS lub sieci.";
+}
+function statusMsg(r){
+  var html=/text\/html/i.test(r.ct)||/^\s*<(!doctype|html)/i.test(r.text);
+  if(r.status===401)return html?"401 z odpowiedzią HTML – to zwykle ochrona wdrożenia Vercel (Deployment Protection), nie klucz API. Użyj domeny produkcyjnej.":"401 – serwer wymaga klucza API (tryb zamknięty). Wpisz klucz w polu powyżej.";
+  if(r.status===403)return "403 – dostęp zablokowany (firewall lub ochrona wdrożenia).";
+  if(r.status===404)return "404 – nie znaleziono. Sprawdź adres i końcówkę ścieżki.";
+  if(r.status===405)return "405 – metoda niedozwolona dla tej ścieżki.";
+  if(r.status===429)return "429 – limit żądań"+(r.ra?", spróbuj za "+r.ra+" s":"")+".";
+  if(r.status>=500)return r.status+" – błąd serwera (np. baza danych niedostępna).";
+  if(html)return r.status+" – odpowiedź HTML zamiast JSON (zły adres lub ochrona wdrożenia).";
+  return "HTTP "+r.status+".";
+}
+function parseJson(t){try{return JSON.parse(t);}catch(e){return null;}}
+function parseRpc(r){
+  var j=parseJson(r.text);if(j)return j;
+  if(/event-stream/i.test(r.ct)||/^\s*(event|data):/m.test(r.text)){
+    var m=/^data:\s*(.+)$/m.exec(r.text);if(m)return parseJson(m[1]);
+  }
+  return null;
+}
+function rpc(method,params,id,key){
+  var headers={"Content-Type":"application/json","Accept":"application/json, text/event-stream"};
+  if(key)headers["Authorization"]="Bearer "+key;
+  var body={jsonrpc:"2.0",method:method};if(id!==null)body.id=id;if(params)body.params=params;
+  return http(BASE+"/api/mcp",{method:"POST",headers:headers,body:JSON.stringify(body)},25000);
+}
+
+function runTest(){
+  if(BASE===PLACEHOLDER){testSum.textContent="Najpierw wpisz adres wdrożenia w sekcji „Twój adres wdrożenia”.";return;}
+  testBtn.disabled=true;testOut.textContent="";testSum.textContent="";
+  var key=$("key-in").value.trim();
+  var failed=0,warned=0;
+  var asof=null;
+
+  function step1(){
+    var li=addLine("run","Stan danych: pobieranie /data-info.json");
+    return http(BASE+"/data-info.json").then(function(r){
+      var j=r.ok?parseJson(r.text):null;
+      if(j&&j.data_as_of){asof=j.data_as_of;setLine(li,"ok","Stan danych na dzień "+pl(j.data_as_of),(j.dz_u&&j.dz_u.latest_act?"Najnowszy Dz.U.: "+j.dz_u.latest_act+(j.m_p&&j.m_p.latest_act?"; M.P.: "+j.m_p.latest_act:""):""));}
+      else{warned++;setLine(li,"wn","Nie udało się odczytać /data-info.json",statusMsg(r));}
+    },function(e){warned++;setLine(li,"wn","Nie udało się pobrać /data-info.json",netMsg(e));});
+  }
+  function step2(){
+    var li=addLine("run","Zdrowie usługi: GET /api/health");
+    var h=key?{"Authorization":"Bearer "+key}:{};
+    return http(BASE+"/api/health",{headers:h}).then(function(r){
+      var j=parseJson(r.text);
+      if(r.status===200&&j&&j.ok){
+        setLine(li,"ok","Usługa działa, baza dostępna","dokumenty: "+j.documents+", fragmenty: "+j.chunks+", wersja: "+j.version+(j.data_as_of?", data_as_of: "+j.data_as_of:""));
+      }else if(j&&j.ok===false){
+        failed++;setLine(li,"bad","Usługa odpowiada, ale baza danych jest niedostępna (db=false)","To problem wdrożenia (DATABASE_URL, limity bazy), nie klienta AI. "+statusMsg(r));
+      }else{failed++;setLine(li,"bad","Nieoczekiwana odpowiedź /api/health",statusMsg(r));}
+    },function(e){failed++;setLine(li,"bad","Nie można połączyć się z /api/health",netMsg(e));});
+  }
+  function step3(){
+    var li=addLine("run","MCP: initialize");
+    return rpc("initialize",{protocolVersion:"2025-03-26",capabilities:{},clientInfo:{name:"podlacz-test",version:"1.0"}},1,key).then(function(r){
+      var j=parseRpc(r);
+      if(r.ok&&j&&j.result&&j.result.serverInfo){
+        setLine(li,"ok","Serwer MCP odpowiada: "+j.result.serverInfo.name+" "+(j.result.serverInfo.version||""),"wersja protokołu: "+j.result.protocolVersion);
+        return true;
+      }
+      failed++;setLine(li,"bad","Serwer MCP nie odpowiedział poprawnie na initialize",statusMsg(r)+(j&&j.error?" Komunikat: "+j.error.message:""));return false;
+    },function(e){failed++;setLine(li,"bad","Nie można połączyć się z /api/mcp",netMsg(e));return false;});
+  }
+  function step4(){
+    var li=addLine("run","MCP: notifications/initialized");
+    return rpc("notifications/initialized",null,null,key).then(function(r){
+      if(r.status===202||r.status===200||r.status===204)setLine(li,"ok","Powiadomienie przyjęte (HTTP "+r.status+")");
+      else{warned++;setLine(li,"wn","Powiadomienie initialized: nietypowa odpowiedź",statusMsg(r));}
+    },function(e){warned++;setLine(li,"wn","Powiadomienie initialized nie powiodło się",netMsg(e));});
+  }
+  function step5(){
+    var li=addLine("run","MCP: tools/list");
+    return rpc("tools/list",null,2,key).then(function(r){
+      var j=parseRpc(r);
+      var tools=j&&j.result&&Array.isArray(j.result.tools)?j.result.tools:null;
+      if(r.ok&&tools){
+        var names=tools.map(function(t){return String(t.name);});
+        var need=["search_law","get_article","get_act"],miss=need.filter(function(n){return names.indexOf(n)<0;});
+        if(miss.length){warned++;setLine(li,"wn","Lista narzędzi niekompletna: "+names.join(", "),"Brakuje: "+miss.join(", "));}
+        else setLine(li,"ok","Narzędzia: "+names.join(", "));
+      }else{failed++;setLine(li,"bad","tools/list nie zwróciło listy narzędzi",statusMsg(r)+(j&&j.error?" Komunikat: "+j.error.message:""));}
+    },function(e){failed++;setLine(li,"bad","tools/list nie powiodło się",netMsg(e));});
+  }
+  function step6(){
+    var li=addLine("run","MCP: przykładowe wyszukiwanie (search_law: art. 118 kodeks cywilny)");
+    return rpc("tools/call",{name:"search_law",arguments:{query:"art. 118 kodeks cywilny",limit:1}},3,key).then(function(r){
+      var j=parseRpc(r);
+      var res=j&&j.result;
+      if(r.ok&&res&&!res.isError&&Array.isArray(res.content)&&res.content[0]){
+        var txt=String(res.content[0].text||"");
+        var hasStan=/Stan danych na dzień/i.test(txt);
+        var first=txt.split("\n").slice(0,3).join("\n");
+        if(hasStan)setLine(li,"ok","Wyszukiwanie działa i odpowiedź zawiera linię o stanie danych",first);
+        else{warned++;setLine(li,"wn","Wyszukiwanie działa, ale odpowiedź NIE zawiera linii „Stan danych na dzień …”",first);}
+      }else if(res&&res.isError){failed++;setLine(li,"bad","Narzędzie zwróciło błąd",String(res.content&&res.content[0]&&res.content[0].text||""));}
+      else{failed++;setLine(li,"bad","Wywołanie search_law nie powiodło się",statusMsg(r)+(j&&j.error?" Komunikat: "+j.error.message:""));}
+    },function(e){failed++;setLine(li,"bad","Wywołanie search_law nie powiodło się",netMsg(e));});
+  }
+
+  step1().then(step2).then(step3).then(function(ok){
+    if(!ok){addLine("wn","Pominięto dalsze kroki MCP, bo initialize się nie powiodło.");return;}
+    return step4().then(step5).then(step6);
+  }).then(function(){
+    if(failed===0){
+      testSum.textContent=warned?"Test zakończony: połączenie działa, ale są uwagi (patrz wyżej).":"Test zakończony: wszystko działa. Możesz podłączyć klienta AI"+(asof?" (stan danych na dzień "+pl(asof)+")":"")+".";
+    }else{
+      testSum.textContent="Test zakończony: "+failed+" krok(ów) z błędem. Zajrzyj do sekcji „Rozwiązywanie problemów”.";
+    }
+    testBtn.disabled=false;
+  },function(){testSum.textContent="Test przerwany nieoczekiwanym błędem.";testBtn.disabled=false;});
+}
+testBtn.addEventListener("click",runTest);
+
+/* ---------- kopiowanie elementów statycznych ---------- */
+document.querySelectorAll("button[data-copy-el]").forEach(function(b){
+  b.addEventListener("click",function(){var el=$(b.getAttribute("data-copy-el"));copyText(el.textContent,b);});
+});
+
+/* ---------- motyw ---------- */
+var themeBtn=$("theme-btn");
+var MODES=["auto","light","dark"],MODE_LABEL={auto:"auto",light:"jasny",dark:"ciemny"};
+var mode="auto";
+try{var tm=localStorage.getItem("prawo-theme");if(tm==="light"||tm==="dark")mode=tm;}catch(e){}
+function applyMode(){
+  if(mode==="auto")document.documentElement.removeAttribute("data-theme");else document.documentElement.setAttribute("data-theme",mode);
+  themeBtn.textContent="Motyw: "+MODE_LABEL[mode];
+  themeBtn.setAttribute("aria-label","Motyw kolorystyczny: "+MODE_LABEL[mode]+". Kliknij, aby zmienić.");
+}
+themeBtn.addEventListener("click",function(){
+  mode=MODES[(MODES.indexOf(mode)+1)%MODES.length];
+  try{if(mode==="auto")localStorage.removeItem("prawo-theme");else localStorage.setItem("prawo-theme",mode);}catch(e){}
+  applyMode();
+});
+applyMode();
+
+/* ---------- start ---------- */
+$("verified-foot").textContent=pl(VERIFIED);
+updateBaseUi();
+renderHelp();renderGroups();renderList();renderTrouble();loadDataInfo();
+
+function fromHash(){
+  var m=/^#k-([a-z0-9-]+)$/.exec(location.hash||"");
+  if(m&&byId(m[1])){selectClient(m[1],false);return true;}
+  return false;
+}
+window.addEventListener("hashchange",fromHash);
+if(!fromHash()){selectGroup("claude");selectClient("claude-web",false);}
+booting=false;
+})();
+</script>
+</body>
+</html>

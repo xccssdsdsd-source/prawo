@@ -59,6 +59,18 @@ input[type=search]{flex:1 1 220px;min-height:44px;font:inherit;padding:6px 10px;
 footer{border-top:1px solid var(--line);padding:24px 0 40px;color:var(--muted);font-size:.93rem}
 footer p{margin:0 0 6px}
 .vh{position:absolute;left:-9999px}
+a.btn{display:inline-block;text-decoration:none;line-height:30px;color:var(--accent-fg)}
+a.btn:hover{filter:brightness(1.1)}
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0 0}
+a.btn.ghost{background:transparent;color:var(--accent)}
+.srclist{list-style:none;padding:0;margin:0 0 8px}
+.srclist li{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:0 0 8px}
+.srclist .d{display:block;color:var(--muted);font-size:.9rem}
+.st{display:inline-block;border:1px solid currentColor;border-radius:999px;padding:0 9px;font-size:.8rem;font-weight:600;margin:0 4px}
+.st-aktywne{color:#17653a}.st-uśpione{color:var(--warn)}.st-planowane{color:var(--muted)}
+@media (prefers-color-scheme:dark){.st-aktywne{color:#7fd49c}}
+#wiedza ul{padding-left:20px;margin:0}
+#wiedza li{margin:0 0 6px}
 </style>
 </head>
 <body>
@@ -68,12 +80,14 @@ footer p{margin:0 0 6px}
   <p class="sub">Polish law API for AI models</p>
   <p class="lead">Obowiązujące akty z Dz.U. i M.P. oraz teksty ujednolicone, z wyszukiwaniem na poziomie artykułów. REST, MCP i OpenAPI – otwarte i bez klucza.</p>
   <ul class="tags"><li>REST</li><li>MCP</li><li>OpenAPI</li><li>bez klucza</li></ul>
+  <p class="cta"><a class="btn" href="/podlacz.html">Jak podłączyć do Claude, Gemini, ChatGPT i innych</a><a class="btn ghost" href="/data-info.json">Stan danych (JSON)</a></p>
 </header>
 
 <main>
 <section id="freshness" aria-labelledby="h-fresh">
   <h2 id="h-fresh">Aktualność danych</h2>
   <p class="sub">Data freshness</p>
+  <!--DATA-INFO:START-->
   <p class="asof" id="asof">Stan danych na dzień 11.10.2026</p>
   <dl class="grid">
     <div class="stat"><dt>Najnowszy akt Dz.U.</dt><dd id="dzu">Dz.U. 2026 poz. 1307<small>ogłoszony 08.10.2026</small></dd></div>
@@ -82,7 +96,7 @@ footer p{margin:0 0 6px}
     <div class="stat"><dt>Dokumenty M.P.</dt><dd id="n-mp">2&nbsp;743</dd></div>
     <div class="stat"><dt>Teksty ujednolicone</dt><dd id="n-cons">1&nbsp;688<small id="cons-latest">najnowszy: Dz.U. 2026 poz. 1070 (07.08.2026)</small></dd></div>
   </dl>
-  <p class="note" id="cons-note"><strong>Teksty ujednolicone</strong> odzwierciedlają stan prawny na dzień ich sporządzenia; zmiany ogłoszone później mogą nie być w nich ujęte.</p>
+  <p class="note" id="cons-note"><strong>Teksty ujednolicone:</strong> Tekst ujednolicony odzwierciedla stan prawny na dzień jego sporządzenia; zmiany ogłoszone później mogą nie być w nim ujęte.</p>
   <h3>Czego nie obejmuje</h3>
   <ul class="plain" id="notcov">
     <li>akty uchylone i wygasłe</li>
@@ -91,6 +105,15 @@ footer p{margin:0 0 6px}
     <li>akty prawa miejscowego i dzienniki wojewódzkie</li>
     <li>akty ogłoszone po dacie stanu danych</li>
   </ul>
+  <h3>Źródła danych</h3>
+  <ul class="srclist" id="sources">
+    <li><strong>Dziennik Ustaw (ISAP / API ELI Sejmu)</strong><span class="st st-aktywne">aktywne</span>17&nbsp;737 dokumentów, najnowszy z 08.10.2026<span class="d">Akty prawne ogłoszone w Dzienniku Ustaw: teksty ogłoszone obowiązujące (HTML/PDF) oraz metadane z api.sejm.gov.pl/eli. Obsługiwane przez pipeline/update_data.py.</span></li>
+    <li><strong>Monitor Polski (ISAP / API ELI Sejmu)</strong><span class="st st-aktywne">aktywne</span>2&nbsp;743 dokumentów, najnowszy z 06.10.2026<span class="d">Akty ogłoszone w Monitorze Polskim (uchwały, zarządzenia, obwieszczenia) z api.sejm.gov.pl/eli. Obsługiwane przez pipeline/update_data.py.</span></li>
+    <li><strong>Teksty ujednolicone (ISAP)</strong><span class="st st-aktywne">aktywne</span>1&nbsp;688 dokumentów, najnowszy z 07.08.2026<span class="d">Teksty jednolite/ujednolicone ustaw i rozporządzeń (PDF typu U) z api.sejm.gov.pl/eli. Wersja preferowana przez API. Obsługiwane przez pipeline/update_data.py.</span></li>
+    <li><strong>SAOS – orzeczenia sądów</strong><span class="st st-uśpione">uśpione</span><span class="d">System Analizy Orzeczeń Sądowych (ICM UW): orzeczenia sądów powszechnych, Sądu Najwyższego, sądów administracyjnych, Trybunału Konstytucyjnego i KIO. Fetcher przyrostowy po sinceModificationDate; tekst dzielony na fragmenty ~2000 znaków, kategoria 'wyrok', doc_id SAOS/&lt;id&gt;.</span></li>
+    <li><strong>Prawo UE po polsku (Publications Office / Cellar)</strong><span class="st st-uśpione">uśpione</span><span class="d">Akty prawa UE (rozporządzenia, dyrektywy, wybrane artykuły traktatów) po numerze CELEX z publications.europa.eu, w polskiej wersji językowej. Lista 44 zweryfikowanych aktów w zrodla/eurlex/seed.json; podział na 'Artykuł N'.</span></li>
+  </ul>
+  <!--DATA-INFO:END-->
   <p class="note" id="fresh-err" hidden style="margin-top:12px;color:var(--muted)">Nie udało się pobrać /data-info.json – widoczne są wartości domyślne.</p>
 </section>
 
@@ -114,6 +137,7 @@ footer p{margin:0 0 6px}
 <section aria-labelledby="h-connect">
   <h2 id="h-connect">Jak podłączyć</h2>
   <p class="sub">Connect your client</p>
+  <p class="lead"><a href="/podlacz.html"><strong>Pełna instrukcja krok po kroku</strong></a> dla Claude (claude.ai, Desktop, Code, API), Gemini, ChatGPT, Cursora, VS Code i innych – z gotowymi snippetami, testem połączenia i promptem do wklejenia. Poniżej wersja skrócona.</p>
   <div class="cards">
     <article class="card">
       <h3>MCP</h3>
@@ -148,6 +172,11 @@ curl "https://TWOJA-DOMENA.vercel.app/api/article?id=DU/1964/93&amp;art=445"</pr
   </form>
   <p id="status" role="status" aria-live="polite"></p>
   <ul id="results"></ul>
+</section>
+<section id="wiedza" aria-labelledby="h-wiedza" hidden>
+  <h2 id="h-wiedza">Baza wiedzy</h2>
+  <p class="sub">Notatki wyjaśniające – orientacja w temacie, nie źródło przepisu. Treść przepisu zawsze weryfikuj w API.</p>
+  <ul id="wiedza-list"></ul>
 </section>
 </main>
 
@@ -215,7 +244,40 @@ curl "https://TWOJA-DOMENA.vercel.app/api/article?id=DU/1964/93&amp;art=445"</pr
       var ul=$("notcov");ul.textContent="";
       d.not_covered.forEach(function(t){var li=document.createElement("li");li.textContent=t;ul.appendChild(li);});
     }
+    if(Array.isArray(d.sources)&&d.sources.length&&$("sources")){
+      var sl=$("sources");sl.textContent="";
+      d.sources.forEach(function(x){
+        var li=document.createElement("li");
+        var nm=document.createElement("strong");nm.textContent=x.nazwa||x.id;li.appendChild(nm);
+        var st=(x.status==="aktywne"||x.status==="uśpione"||x.status==="planowane")?x.status:"planowane";
+        var b=document.createElement("span");b.className="st st-"+st;b.textContent=st==="planowane"?"wkrótce":st;li.appendChild(b);
+        var parts=[];
+        if(typeof x.count==="number")parts.push(num(x.count)+" dokumentów");
+        if(x.newest_date)parts.push("najnowszy z "+pl(x.newest_date));
+        if(parts.length)li.appendChild(document.createTextNode(parts.join(", ")));
+        if(x.opis){var ds=document.createElement("span");ds.className="d";ds.textContent=x.opis;li.appendChild(ds);}
+        sl.appendChild(li);
+      });
+    }
+    if(d.last_update_run&&$("last-run"))$("last-run").textContent="Ostatnia aktualizacja danych: "+pl(d.last_update_run)+".";
   }).catch(function(){$("fresh-err").hidden=false;});
+
+  // Baza wiedzy (opcjonalna)
+  fetch("/wiedza/index.json",{cache:"no-cache"}).then(function(r){
+    if(!r.ok)throw new Error(r.status);return r.json();
+  }).then(function(items){
+    if(!Array.isArray(items)||!items.length)return;
+    var ul=$("wiedza-list");ul.textContent="";var n=0;
+    items.forEach(function(it){
+      if(!it||typeof it.slug!=="string"||!/^[A-Za-z0-9._-]+$/.test(it.slug))return;
+      var li=document.createElement("li");
+      var a=document.createElement("a");a.href="/wiedza/"+it.slug+".md";a.textContent=it.tytul||it.slug;li.appendChild(a);
+      if(it.opis)li.appendChild(document.createTextNode(" – "+it.opis));
+      if(it.zweryfikowano)li.appendChild(document.createTextNode(" (sprawdzono "+pl(it.zweryfikowano)+")"));
+      ul.appendChild(li);n++;
+    });
+    if(n)$("wiedza").hidden=false;
+  }).catch(function(){});
 
   // Demo
   var status=$("status"),list=$("results");
