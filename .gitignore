@@ -31,3 +31,15 @@ venv/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Dzienna aktualizacja (GitHub Actions): sladzony jest tylko manifest
+ci_stan/*
+!ci_stan/manifest.json
+
+# Aktualizacja lokalna (aktualizuj.py): stan, kopie, raporty, logi, blokady - NIE do repo
+stan/
+*.lock
+.env.local
+# Skill, komenda i ustawienia Claude Code ARE w repo (bezpieczna allowlista, config zgod); lokalne nadpisania - nie
+!.claude/
+.claude/settings.local.json

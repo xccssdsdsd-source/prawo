@@ -284,6 +284,19 @@ def main(argv=None):
     du, mp, uj = (json.loads((dane / n).read_text("utf-8")) for n in names)
     # data pobrania = czas zapisu najświeższego pliku z metadanymi
     pobrano_dt = datetime.fromtimestamp(max((dane / n).stat().st_mtime for n in names), timezone.utc)
+    # data stanu = ostatnie UDANE, pelne sprawdzenie API (stan/zmiany.json), jesli nowsze niz zapis indeksow
+    # (indeksy sa zapisywane tylko przy zmianie, wiec same nie odzwierciedlaja dnia sprawdzenia)
+    _zm = load_json(stan / "zmiany.json")
+    if isinstance(_zm, dict) and _zm.get("run_at") and not _zm.get("dry_run") and not _zm.get("partial") \
+            and not _zm.get("bootstrap"):
+        try:
+            _t = datetime.fromisoformat(str(_zm["run_at"]).replace("Z", "+00:00"))
+            if _t.tzinfo is None:
+                _t = _t.replace(tzinfo=timezone.utc)
+            if _t > pobrano_dt:
+                pobrano_dt = _t.astimezone(timezone.utc)
+        except ValueError:
+            pass
 
     l_du, l_mp, l_uj = latest(du), latest(mp), latest(uj)
     sources = build_sources(load_json(a.zrodla), stan, du, mp, uj)

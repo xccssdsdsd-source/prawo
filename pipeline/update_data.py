@@ -40,7 +40,7 @@ import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote
 
@@ -54,6 +54,11 @@ USER_AGENT = ("PrawoAPI-update_data/1.0 (otwarty projekt: przyrostowa aktualizac
               "tekstow polskiego prawa z API ELI Sejmu dla modeli AI; klient python-requests)")
 MAX_WORKERS = 12
 REMOVAL_LIMIT = 0.03  # 3%
+# Tryb --ci (GitHub Actions): na serwerze nie ma lokalnego dane/ z gigabajtami tekstow. Manifest jest wiazacy,
+# brakujace pliki lokalne NIE sa "naprawiane" (nie pobieramy wszystkiego od nowa), pobierane sa tylko akty
+# nowe/zmienione. Ustawiane w run() na podstawie --ci.
+CI_MODE = False
+RETRY_DAYS = 30   # tyle dni ponawiamy pobranie tekstu swiezo ogloszonego aktu, ktory jeszcze go nie ma
 
 ST_OBOW = "obowiązujący"
 ST_TJ = "akt posiada tekst jednolity"
@@ -202,11 +207,18 @@ def parse_lata(s: str | None):
 
 class Client:
     """requests + retry z backoffem + timeouty. get() -> (status, bytes) dla 200/404,
-    w pozostalych przypadkach HttpError po wyczerpaniu prob."""
+    w pozostalych przypadkach HttpError po wyczerpaniu prob.
+
+    Wspolny limiter: seria bledow polaczenia (ConnectionError/Timeout) w dowolnym watku wydluza
+    pauze przed kolejnymi zadaniami WSZYSTKICH watkow (progresywnie, do COOL_MAX s). Sukces
+    zeruje serie. Dzieki temu serwer, ktory zrywa polaczenia przy zbyt duzej wspolbieznosci,
+    dostaje chwile oddechu zamiast kolejnych lawinowych prob."""
 
     RETRY_STATUS = {408, 425, 429, 500, 502, 503, 504}
+    COOL_STEP = 2.0     # s na kazdy kolejny blad polaczenia z rzedu
+    COOL_MAX = 30.0
 
-    def __init__(self, workers=8, timeout=(15, 90), retries=5, backoff=1.0):
+    def __init__(self, workers=4, timeout=(15, 90), retries=5, backoff=1.0):
         self.timeout = timeout
         self.retries = retries
         self.backoff = backoff
@@ -215,6 +227,8 @@ class Client:
         self._lock = threading.Lock()
         self.n_requests = 0
         self.n_retries = 0
+        self._conn_streak = 0
+        self._cool_until = 0.0
 
     def _session(self):
         import requests
@@ -227,18 +241,47 @@ class Client:
             self._local.s = s
         return s
 
-    def get(self, url: str):
+    def _drop_session(self):
+        s = getattr(self._local, "s", None)
+        if s is not None:
+            try:
+                s.close()
+            except Exception:  # noqa: BLE001
+                pass
+            self._local.s = None
+
+    def _note_conn_error(self):
+        with self._lock:
+            self._conn_streak += 1
+            pause = min(self.COOL_MAX, self.COOL_STEP * self._conn_streak)
+            self._cool_until = max(self._cool_until, time.time() + pause)
+
+    def _note_ok(self):
+        with self._lock:
+            self._conn_streak = 0
+
+    def _cooldown(self):
+        with self._lock:
+            d = self._cool_until - time.time()
+        if d > 0:
+            time.sleep(d)
+
+    def get(self, url: str, timeout=None, retries=None):
         import requests
+        timeout = timeout or self.timeout
+        retries = retries or self.retries
         last = "?"
-        for attempt in range(self.retries):
+        for attempt in range(retries):
+            self._cooldown()
             with self._lock:
                 self.n_requests += 1
                 if attempt:
                     self.n_retries += 1
             wait_s = None
             try:
-                r = self._session().get(url, timeout=self.timeout)
+                r = self._session().get(url, timeout=timeout)
                 code = r.status_code
+                self._note_ok()
                 if code in (200, 404):
                     return code, r.content
                 last = f"HTTP {code}"
@@ -251,15 +294,19 @@ class Client:
                 raise
             except requests.RequestException as e:
                 last = f"{type(e).__name__}"
-            if attempt < self.retries - 1:
+                if isinstance(e, (requests.ConnectionError, requests.Timeout)):
+                    self._note_conn_error()
+                    self._drop_session()    # zerwane polaczenie z puli nie powinno wracac do uzycia
+            if attempt < retries - 1:
                 time.sleep(wait_s if wait_s is not None
                            else min(60.0, self.backoff * (2 ** attempt)) + random.uniform(0, 0.5))
-        raise HttpError(f"{last} dla {url} (po {self.retries} probach)")
+        raise HttpError(f"{last} dla {url} (po {retries} probach)")
 
 
-def get_json(client, url: str):
-    """Zwraca obiekt JSON albo None dla 404. Bledny JSON => HttpError."""
-    st, body = client.get(url)
+def get_json(client, url: str, **kw):
+    """Zwraca obiekt JSON albo None dla 404. Bledny JSON => HttpError.
+    kw (timeout/retries) trafia tylko do prawdziwego Client; atrapy z get(url) dzialaja bez zmian."""
+    st, body = client.get(url, **(kw if isinstance(client, Client) else {}))
     if st == 404:
         return None
     try:
@@ -312,11 +359,19 @@ def digest_year(pub: str, year: int, items: list):
     return targets, statuses, latest
 
 
+META_TIMEOUT = (15, 45)       # lista roku jest duza, ale zwykle schodzi w kilka sekund; dluzsze wiszenie = zerwane polaczenie
+META_RETRIES = 4
+META_WORKERS = 4              # na zywym API 8 watkow dawalo lawinowe ConnectionError (24 z 197 lat bez metadanych)
+META_RETRY_ROUNDS = 3         # sekwencyjne ponowienia nieudanych lat po fazie rownoleglej
+YEAR_RETRY_SLEEP = 1.0        # s miedzy dwiema probami pobrania tego samego roku
+META_RETRY_PAUSE = 30.0       # s przed pierwsza runda; kolejne rundy: x2 (testy ustawiaja 0)
+
+
 def fetch_year(client, pub: str, year: int):
     last = None
-    for _ in range(2):  # dodatkowa proba na poziomie roku (niepelna/uszkodzona odpowiedz)
+    for i in range(2):  # dodatkowa proba na poziomie roku (niepelna/uszkodzona odpowiedz)
         try:
-            d = get_json(client, f"{API}/acts/{pub}/{year}")
+            d = get_json(client, f"{API}/acts/{pub}/{year}", timeout=META_TIMEOUT, retries=META_RETRIES)
             if d is None:
                 raise HttpError("404 dla roku")
             items = d.get("items")
@@ -328,17 +383,32 @@ def fetch_year(client, pub: str, year: int):
             return digest_year(pub, year, items), len(items)
         except HttpError as e:
             last = e
-            time.sleep(1.0)
+            if i == 0 and YEAR_RETRY_SLEEP:
+                time.sleep(YEAR_RETRY_SLEEP)
     raise last  # type: ignore[misc]
+
+
+def _absorb_year(meta: Meta, pub: str, y: int, res) -> None:
+    (targets, statuses, latest), n = res
+    meta.targets.update(targets)
+    meta.status_by_key.update(statuses)
+    meta.ok_years.add((pub, y))
+    meta.n_items += n
+    meta.failed.pop(f"{pub}/{y}", None)
+    if latest:
+        cur = meta.latest.get(pub)
+        if cur is None or (y, latest[0]) > (cur["year"], cur["pos"]):
+            meta.latest[pub] = dict(year=y, pos=latest[0], address=latest[1], date=latest[2])
 
 
 def fetch_metadata(client, pubs, lata, workers) -> Meta:
     meta = Meta()
+    workers = max(1, min(int(workers), META_WORKERS))
     # lista lat dla kazdego wydawcy
     years_by_pub: dict[str, list[int]] = {}
     for pub in pubs:
         try:
-            d = get_json(client, f"{API}/acts/{pub}")
+            d = get_json(client, f"{API}/acts/{pub}", timeout=META_TIMEOUT, retries=META_RETRIES)
             ys = sorted(int(y) for y in (d or {}).get("years", []))
             if not ys:
                 raise HttpError("pusta lista lat")
@@ -354,7 +424,7 @@ def fetch_metadata(client, pubs, lata, workers) -> Meta:
         years_by_pub[pub] = ys
 
     tasks = [(pub, y) for pub, ys in years_by_pub.items() for y in ys]
-    log(f"Pobieram metadane: {len(tasks)} par wydawca/rok ...")
+    log(f"Pobieram metadane: {len(tasks)} par wydawca/rok (wspolbieznosc {workers}) ...")
     with ThreadPoolExecutor(workers) as ex:
         futs = {ex.submit(fetch_year, client, pub, y): (pub, y) for pub, y in tasks}
         pending = set(futs)
@@ -363,19 +433,31 @@ def fetch_metadata(client, pubs, lata, workers) -> Meta:
             for f in done:
                 pub, y = futs[f]
                 try:
-                    (targets, statuses, latest), n = f.result()
+                    res = f.result()
                 except Exception as e:  # noqa: BLE001
                     meta.failed[f"{pub}/{y}"] = str(e)
                     continue
-                meta.targets.update(targets)
-                meta.status_by_key.update(statuses)
-                meta.ok_years.add((pub, y))
-                meta.n_items += n
-                if latest:
-                    cur = meta.latest.get(pub)
-                    if cur is None or (y, latest[0]) > (cur["year"], cur["pos"]):
-                        meta.latest[pub] = dict(year=y, pos=latest[0], address=latest[1],
-                                                date=latest[2])
+                _absorb_year(meta, pub, y, res)
+
+    # sekwencyjne ponowienia nieudanych lat: 1 watek, pauza (serwer ma czas odpoczac), do N rund
+    for rnd in range(1, META_RETRY_ROUNDS + 1):
+        todo = [(pub, y) for pub, y in tasks if f"{pub}/{y}" in meta.failed]
+        if not todo:
+            break
+        pause = META_RETRY_PAUSE * (2 ** (rnd - 1))
+        log(f"Ponawiam {len(todo)} nieudanych lat sekwencyjnie (runda {rnd}/{META_RETRY_ROUNDS}, "
+            f"pauza {pause:.0f} s) ...")
+        if pause > 0:
+            time.sleep(pause)
+        for pub, y in todo:
+            try:
+                res = fetch_year(client, pub, y)
+            except Exception as e:  # noqa: BLE001
+                meta.failed[f"{pub}/{y}"] = str(e)
+                continue
+            _absorb_year(meta, pub, y, res)
+        left = sum(1 for pub, y in todo if f"{pub}/{y}" in meta.failed)
+        log(f"  po rundzie {rnd}: odzyskano {len(todo) - left}, nadal bledow: {left}")
     meta.years_fetched = {pub: sum(1 for (p, _) in meta.ok_years if p == pub) for pub in pubs}
     return meta
 
@@ -580,12 +662,15 @@ def make_plan(manifest: dict, meta: Meta, dane: Path, full: bool):
         if e.get("kategoria") != t["kategoria"] and t["kind"] == "main":
             plan["move"].append(key)
         if e.get("no_text"):
-            if (full or e.get("changeDate") != t["changeDate"]) and has_text_flags(t):
+            retry = bool(e.get("retry_until")) and e["retry_until"] >= datetime.now().date().isoformat()
+            if (full or retry or e.get("changeDate") != t["changeDate"]) and has_text_flags(t):
                 plan["add"].append(key)
             else:
                 plan["unchanged"] += 1
             continue
         have = existing_files(dane, e, key, t["kategoria"])
+        if CI_MODE and not have and e.get("files"):
+            have = e["files"]    # tryb CI: manifest jest wiazacy, brak plikow lokalnych to nie blad
         if not have:
             plan["repair"].append(key)
         elif full or e.get("changeDate") != t["changeDate"]:
@@ -642,15 +727,31 @@ def removal_guard(plan, meta: Meta, manifest: dict, only_years, force: bool):
 
 # --------------------------------------------------------------------------- zadania pobierania
 
+_ERR_TITLE = re.compile(
+    r"<title[^>]*>\s*(?:\d{3}|error|bad gateway|service unavailable|gateway time-?out|"
+    r"too many requests|internal server error|forbidden|not found|access denied|request blocked)", re.I)
+SHRINK_MIN_OLD = 2000      # ponizej tego rozmiaru poprzedniego pliku kontroli spadku nie stosujemy
+SHRINK_RATIO = 0.30        # nowa tresc < 30% poprzedniej => podejrzana (strona bledu/obcieta odpowiedz)
+ACCEPT_SHRINK = False      # ustawiane z --accept-shrink (po recznym sprawdzeniu)
+PREV_DIR = "_poprzednie"   # dane/_wycofane/_poprzednie/<kat>/<plik> - kopia pliku przed nadpisaniem zmiana
+
+
 def valid_body(body: bytes, ext: str) -> bool:
     if not body:
         return False
     if ext == "pdf":
         return body[:5] == b"%PDF-"
+    # HTML: prawdziwe teksty ELI zawsze maja znacznik <html> i nigdy <title>; strony bledow proxy/API
+    # (200 z "503 Service Unavailable") maja <title> z kodem lub komunikatem bledu.
+    head = body[:65536].decode("utf-8", "ignore").lower()
+    if "<html" not in head:
+        return False
+    if _ERR_TITLE.search(head):
+        return False
     return True
 
 
-def run_job(client, dane: Path, job: dict):
+def run_job(client, dane: Path, job: dict, intent=None):
     """Wykonywane w watku. Zwraca slownik wyniku; nie dotyka manifestu."""
     key, mode, t, entry = job["key"], job["mode"], job["target"], job.get("entry") or {}
     pub, y, p, isu = parse_key(key)
@@ -692,7 +793,7 @@ def run_job(client, dane: Path, job: dict):
                 res.update(outcome="no_text", reason="API: brak tekstu (textHTML/textPDF=false)")
                 return res
 
-        body, ext, errs = None, None, []
+        body, ext, errs, empties = None, None, [], []
         for e_, url in cands:
             try:
                 st, b = client.get(url)
@@ -701,14 +802,22 @@ def run_job(client, dane: Path, job: dict):
                 continue
             if st == 404:
                 continue
+            if not b:
+                empties.append(e_)      # 200 i 0 bajtow: swiezy akt, tekst jeszcze nie wygenerowany
+                continue
             if not valid_body(b, e_):
-                errs.append(f"pusta lub niepoprawna odpowiedz ({e_})")
+                errs.append(f"pusta lub niepoprawna odpowiedz ({e_})")   # uszkodzona tresc = prawdziwy blad
                 continue
             body, ext = b, e_
             break
         if body is None:
             if errs:
                 res.update(outcome="failed", error="; ".join(errs)[:300])
+            elif empties:
+                # nie jest to blad sieci: API deklaruje tekst, ale jeszcze go nie ma (nowy akt).
+                # Nie liczymy do serii bledow; ponawiamy przez retry_until (patrz make_plan).
+                res.update(outcome="no_text", retry=True,
+                           reason="tekst jeszcze niedostepny (pusta odpowiedz: " + ",".join(empties) + ")")
             else:
                 res.update(outcome="no_text", reason="404 dla plikow tekstu")
             return res
@@ -716,6 +825,11 @@ def run_job(client, dane: Path, job: dict):
         sha = sha256_bytes(body)
         rel = f"{kat}/{stem}.{ext}"
         dst = dane / rel
+        if mode == "check" and CI_MODE and not have_old and entry.get("sha256") == sha \
+                and entry.get("files") == [rel]:
+            # tryb CI: brak pliku lokalnego, ale hash z manifestu zgadza sie => tresc bez zmian
+            res.update(outcome="same", files=[rel], sha256=sha, size=len(body), ufile=ufile)
+            return res
         if mode == "check" and have_old:
             old_sha = entry.get("sha256")
             if not old_sha:
@@ -726,6 +840,28 @@ def run_job(client, dane: Path, job: dict):
             if old_sha == sha and have_old[0] == rel:
                 res.update(outcome="same", files=[rel], sha256=sha, size=len(body), ufile=ufile)
                 return res
+        if mode == "check" and have_old and not ACCEPT_SHRINK:
+            try:
+                old_size = (dane / have_old[0]).stat().st_size
+            except OSError:
+                old_size = 0
+            if old_size >= SHRINK_MIN_OLD and len(body) < SHRINK_RATIO * old_size:
+                res.update(outcome="failed",
+                           error=f"nowa tresc ({len(body)} B) < {SHRINK_RATIO:.0%} poprzedniej ({old_size} B) - "
+                                 f"nie nadpisuje (sprawdz recznie; jesli to prawidlowe: --accept-shrink)")
+                return res
+        if mode == "check" and have_old and (dane / have_old[0]).is_file():
+            # write-ahead: zamiar zmiany trafia do dziennika ZANIM nadpiszemy plik. Twarde przerwanie
+            # po nadpisaniu (bez sha256 w manifescie) inaczej zgubiloby zmiane (nastepny przebieg: "same").
+            if intent is not None:
+                intent(key, "changed")
+            # kopia poprzedniej wersji (tylko gdy tresc sie rozni; tu juz wiemy, ze sie rozni)
+            try:
+                bak = unique_path(dane / WYCOFANE / PREV_DIR / have_old[0])
+                bak.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(dane / have_old[0], bak)
+            except OSError:
+                pass
         atomic_write_bytes(dst, body)
         # stary plik pod inna nazwa/rozszerzeniem -> do _wycofane (nie kasujemy)
         for old in have_old:
@@ -803,6 +939,8 @@ def do_move(store: Store, dane: Path, key: str, t: dict):
             new_files.append(dst.relative_to(dane).as_posix())
         elif src.is_file():
             new_files.append(rel)
+        elif CI_MODE:
+            new_files.append(dst.relative_to(dane).as_posix())   # CI: tylko ksiegowosc w manifescie
     e["files"] = new_files
     e["kategoria"] = t["kategoria"]
     store.note(key, "changed")
@@ -824,6 +962,8 @@ def apply_result(store: Store, r: dict, t: dict, counters: dict):
         return
     if oc == "no_text":
         ne = dict(base, files=[], sha256=None, no_text=True, no_text_powod=r.get("reason"))
+        if r.get("retry"):
+            ne["retry_until"] = (datetime.now() + timedelta(days=RETRY_DAYS)).date().isoformat()
         store.manifest[key] = ne
         counters["no_text"] += 1
         return
@@ -1027,6 +1167,8 @@ def summarize_plan(plan, meta: Meta, manifest: dict) -> dict:
 
 
 def run(args, client=None) -> int:
+    global CI_MODE
+    CI_MODE = bool(getattr(args, "ci", False))
     dane = Path(args.dane).resolve()
     stan = Path(args.stan).resolve()
     dry = args.dry_run
@@ -1253,10 +1395,13 @@ def build_parser():
     ap.add_argument("--dane", default=str(ROOT / "dane"))
     ap.add_argument("--stan", default=str(ROOT / "stan"))
     ap.add_argument("--lata", default=None, help="np. 2025,2026 albo 2020-2026")
-    ap.add_argument("--workers", type=int, default=8, help=f"wspolbieznosc (max {MAX_WORKERS})")
+    ap.add_argument("--workers", type=int, default=4,
+                    help=f"wspolbieznosc pobierania tresci (max {MAX_WORKERS}); metadane zawsze <= {META_WORKERS}")
     ap.add_argument("--max-akty", type=int, default=None, help="limit pobran w tym przebiegu (testy)")
     ap.add_argument("--force-removals", action="store_true",
                     help="pozwol na wycofanie > 3%% aktow (po recznym sprawdzeniu przyczyny)")
+    ap.add_argument("--ci", action="store_true",
+                    help="tryb GitHub Actions: manifest wiazacy, brak lokalnych plikow nie powoduje pelnego pobrania")
     ap.add_argument("--hash", action="store_true",
                     help="bootstrap: policz sha256 wszystkich plikow (domyslnie leniwie przy zmianie)")
     return ap
