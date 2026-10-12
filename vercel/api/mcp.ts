@@ -5,6 +5,10 @@ import { dataAsOf } from '../lib/datainfo';
 import { handleHttp } from '../lib/mcp';
 import { applyRateLimit } from '../lib/ratelimit';
 
+// Konektory claude.ai / ChatGPT / Gemini wołają serwer z chmury dostawcy (wspólne adresy IP wielu użytkowników),
+// więc limit per IP musi być hojny; właściwą ochronę przed nadużyciami daje Vercel Firewall (patrz docs/DEPLOY.md).
+const MCP_RATE_LIMIT = Math.max(1, Number(process.env.MCP_RATE_LIMIT) || 600);
+
 const deps = { searchLaw, getArticle, getAct, dataAsOf } as any;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -20,13 +24,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
   }
-  if (method !== 'OPTIONS' && !applyRateLimit(req, res, 'mcp', 120)) {
+  if (method !== 'OPTIONS' && !applyRateLimit(req, res, 'mcp', MCP_RATE_LIMIT)) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.status(429).json({ jsonrpc: '2.0', id: null, error: { code: -32029, message: 'Rate limit exceeded' } });
     return;
   }
   try {
-    const r = await handleHttp(deps, method, req.body);
+    let body: unknown = req.body;
+    if (Buffer.isBuffer(body)) body = body.toString('utf8'); // inny Content-Type niż application/json
+    const r = await handleHttp(deps, method, body);
     set(r.headers);
     res.status(r.status);
     r.body === undefined ? res.end() : res.send(r.body);

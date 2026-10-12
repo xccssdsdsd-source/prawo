@@ -1,6 +1,6 @@
 # Baza wiedzy o polskim prawie – instrukcja utrzymania
 
-Katalog `vercel/public/wiedza/` zawiera poradniki w markdown po polsku dla modeli AI i ludzi oraz spis maszynowy `index.json` (`[{slug, tytul, opis, tagi, zweryfikowano}]`). Pliki są serwowane statycznie jako `/wiedza/<slug>.md`; spis jako `/wiedza/index.json`; skrót w `/llms.txt`. Treść nie jest źródłem prawa i nie jest poradą prawną.
+Katalog `vercel/public/wiedza/` zawiera poradniki w markdown po polsku dla modeli AI i ludzi oraz spis maszynowy `index.json` (`[{slug, tytul, opis, tagi, zweryfikowano}]`). Pliki są serwowane statycznie jako `/wiedza/<slug>.md`; spis jako `/wiedza/index.json`; skrót w `/llms.txt`. Treść nie jest źródłem prawa i nie jest poradą prawną. Pole `tytul` w `index.json` to świadomie krótki tytuł do spisu i może się różnić od nagłówka H1 w pliku. Wszystkie pliki mają zakończenia linii LF.
 
 ## Zasady rzetelności (obowiązują przy każdej zmianie)
 

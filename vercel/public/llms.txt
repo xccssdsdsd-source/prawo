@@ -20,7 +20,7 @@ Dokumentacja maszynowa: /openapi.json (OpenAPI 3.1). Serwer MCP: /api/mcp (narz�
 3. Nie wymyślaj numerów artykułów – zweryfikuj je przez /api/article (getArticle) przed zacytowaniem.
 4. To nie jest porada prawna; aktualność przepisów weryfikuj w ISAP (isap.sejm.gov.pl).
 5. Zakres: Dz.U. i M.P. obowiązujące (+ wyroki/UE, jeśli załadowane). Brak wyniku nie oznacza braku przepisu – spróbuj innych słów lub podaj art. i nazwę aktu.
-6. Orzeczenia, umowy i kategoria "inne" są domyślnie pomijane; użyj parametru kategoria, jeśli ich potrzebujesz, i pamiętaj, że nie są przepisami.
+6. Orzeczenia, umowy, kategoria "inne", wyroki sądów ("wyrok") i prawo UE ("ue") są domyślnie pomijane; użyj parametru kategoria, jeśli ich potrzebujesz, i pamiętaj, że nie są przepisami.
 7. Odpowiedź ze snippetem to tylko fragment – przed cytatem pobierz cały artykuł.
 8. Identyfikatory: eli = DU/1964/93; doc_id = eli albo eli#U (tekst ujednolicony; w URL # jako %23).
 

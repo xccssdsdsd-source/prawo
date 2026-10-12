@@ -25,8 +25,7 @@ venv/
 *.pem
 *.key
 
-# Edytor / narzedzia
-.claude/
+# Edytor / narzedzia (.claude/ jest wersjonowane - patrz nizej; ignorowane tylko settings.local.json)
 .vscode/
 .idea/
 .DS_Store

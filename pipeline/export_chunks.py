@@ -573,6 +573,16 @@ def main_changed(a):
     # Co usunac ze starego chunks.jsonl: removed + dokumenty, ktorych nowy stan znamy (ok / brak warstwy tekstowej).
     # Dokumenty z bledem ekstrakcji lub bez pliku zachowuja stare wiersze (lepsze stare niz brak).
     drop = set(removed) | set(ok_ids) | set(notext_ids)
+    # Ostrzezenia widoczne w podsumowaniu orkiestratora (aktualizuj.py szuka linii z "OSTRZEZ"): bez nich
+    # nieaktualny tekst w chunks.jsonl/bazie albo dokument usuniety z braku warstwy tekstowej zostaje bez sladu.
+    for e in errors:
+        did, _, info = e.partition("\t")
+        print(f"! OSTRZEZENIE: blad ekstrakcji {did} ({info[:160]}) - stare wiersze w chunks.jsonl zachowane, "
+              f"tekst moze byc nieaktualny (patrz bledy.txt)", file=sys.stderr, flush=True)
+    for e in notext_new:
+        did, _, info = e.partition("\t")
+        print(f"! OSTRZEZENIE: {did} bez warstwy tekstowej ({info[:120]}) - usuniety z chunks.jsonl (patrz bez_tekstu.txt)",
+              file=sys.stderr, flush=True)
     n_rm, n_add, trunc = rewrite_chunks(out, drop, delta)
     if trunc:
         print("! OSTRZEZENIE: ucieto niepelna ostatnia linie w chunks.jsonl", file=sys.stderr)
@@ -598,7 +608,8 @@ def main_changed(a):
         f"RAZEM w {out.name}: dokumentów {tot_d}, fragmentów {tot_c}, U+FFFD w pliku {tot_f}, rozmiar {size / 1e6:.1f} MB",
         "Dokumenty wg kategorii: " + ", ".join(f"{k}={v}" for k, v in sorted(per_kat.items())),
     ]
-    (outdir / "raport.txt").write_text("\n".join(rep) + "\n", encoding="utf-8")
+    # osobny plik: raport przyrostowy nie nadpisuje raportu z pelnego eksportu (raport.txt)
+    (outdir / "raport_changed.txt").write_text("\n".join(rep) + "\n", encoding="utf-8")
     print("\n".join(rep))
     return 0
 

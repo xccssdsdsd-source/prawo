@@ -25,6 +25,8 @@ W bazie (stan 11.10.2026) automatyczne przeszukanie znalazło około **2100 adno
 
 ## 3. Najbliższe zapowiedziane zmiany w głównych aktach (stan na 11.10.2026)
 
+Tabela jest **wyborem** zapowiedzianych zmian w głównych kodeksach i ustawach, a nie pełną listą. Komplet (wszystkie adnotacje z datą wejścia w życie od 12.10.2026) daje polecenie z pkt 5.
+
 | Dzień wejścia w życie | Akt | Co zapowiedziano (wg adnotacji) | Ustawa zmieniająca | Odnośnik |
 |---|---|---|---|---|
 | 14.10.2026 | Prawo przedsiębiorców | zmiana w art. 5 ust. 2 i 4 oraz art. 17 ust. 1; zmiany w ustawie o CEIDG (ponad sto adnotacji z tą datą w 7 dokumentach) | ustawa z 13 marca 2026 r. o zmianie ustawy o CEIDG i Punkcie Informacji dla Przedsiębiorcy oraz niektórych innych ustaw, Dz.U. 2026 poz. 507 | [DU/2018/646#U art. 17] |
@@ -37,18 +39,27 @@ W bazie (stan 11.10.2026) automatyczne przeszukanie znalazło około **2100 adno
 | 1.01.2027 | Prawo o ruchu drogowym | zmiany w art. 53 | ustawa z 11 czerwca 2026 r. o zmianie niektórych ustaw w celu uproszczenia procedur administracyjnych …, Dz.U. 2026 poz. 875 | [DU/1997/602#U art. 53] |
 | 1.01.2027 | Prawo o ustroju sądów powszechnych | art. 70 § 3a, art. 94, 94b, 94d | ustawa z 18 grudnia 2025 r. o zmianie ustawy o systemie ubezpieczeń społecznych oraz niektórych innych ustaw, Dz.U. 2026 poz. 26 | [DU/2001/1070#U art. 94b] |
 | 1.01.2027 | Kodeks postępowania cywilnego | nowe brzmienie § 2¹ w art. 477⁹ i § 4 w art. 477¹⁴ | j.w. (Dz.U. 2026 poz. 26) | [DU/1964/296#U art. 477⁹] |
+| 11.01.2027 | Prawo bankowe | zmiany m.in. w art. 4 pkt 18 (definicja oddziału instytucji kredytowej), art. 11, 105d, 131 i 139; adnotacje z tą samą datą są też w ustawach o usługach płatniczych i o rachunkowości (łącznie ok. 160 adnotacji w wielu dokumentach) | ustawa z 31 lipca 2026 r. o zmianie ustawy – Prawo bankowe oraz niektórych innych ustaw, Dz.U. 2026 poz. 1206 | [DU/1997/939#U art. 4] |
+| 11.01.2027 | Ordynacja podatkowa | nowe brzmienie lit. c w pkt 1 w art. 119zg (oddział banku zagranicznego) | j.w. (Dz.U. 2026 poz. 1206) | [DU/1997/926#U art. 119zg] |
 | 18.01.2027 | Prawo o ruchu drogowym | rejestracja pojazdów: dodany art. 72a, dodane ust. 1ab–1al w art. 73 i inne | ustawa z 7 listopada 2025 r. o zmianie ustawy – Prawo o ruchu drogowym, Dz.U. 2025 poz. 1734 | [DU/1997/602#U art. 73] |
 | 18.02.2027 | Kodeks spółek handlowych | liczne zmiany w przepisach o akcjach i rejestrze akcjonariuszy (m.in. art. 328²–328¹⁵), a także w art. 304, 337 i 351 | ustawa z 23 stycznia 2026 r. o zmianie Kodeksu spółek handlowych oraz niektórych innych ustaw, Dz.U. 2026 poz. 176 | [DU/2000/1037#U art. 304] |
 | 1.03.2027 | Kodeks postępowania cywilnego | § 2 w art. 125¹ | (zob. adnotację w tekście) | [DU/1964/296#U art. 125²] |
+| 2.04.2027 | Ordynacja podatkowa | dodany pkt 9 w § 1 w art. 297e | ustawa z 17 października 2025 r. o zmianie ustawy o ochronie praw nabywcy lokalu mieszkalnego lub domu jednorodzinnego oraz Deweloperskim Funduszu Gwarancyjnym oraz niektórych innych ustaw, Dz.U. 2025 poz. 1669 | [DU/1997/926#U art. 297g] |
 | 11.05.2027 | Prawo o ruchu drogowym | zmiany w art. 80b i 80ba | ustawa z 17 lipca 2026 r. o zmianie ustawy o zastawie rejestrowym i rejestrze zastawów oraz ustawy – Prawo o ruchu drogowym, Dz.U. 2026 poz. 1073 | [DU/1997/602#U art. 80ba] |
 | 1.01.2028 | Prawo o ustroju sądów powszechnych | zmiana w art. 94 § 2a pkt 4 lit. a | ustawa z 31 lipca 2026 r. o zmianie ustawy o opiece nad dziećmi w wieku do lat 3 oraz niektórych innych ustaw, Dz.U. 2026 poz. 1123 | [DU/2001/1070#U art. 94] |
 | 19.05.2028 | Kodeks postępowania karnego | zmiana w art. 180 § 2 i inne | ustawa z 23 stycznia 2026 r. o zawodzie psychologa oraz samorządzie zawodowym psychologów, Dz.U. 2026 poz. 187 | [DU/1997/555#U art. 180] |
+| 19.05.2028 | Kodeks spółek handlowych | nowe brzmienie art. 88 (do wymienionych zawodów, których przedstawiciele mogą być partnerami spółki partnerskiej, dodany psycholog) | j.w. (Dz.U. 2026 poz. 187) | [DU/2000/1037#U art. 87] |
+| 1.10.2028 | Kodeks postępowania karnego | dodany art. 100b | Dz.U. 2020 poz. 2320 (ustawa o doręczeniach elektronicznych [WO]; tego aktu nie ma w bazie, numer pochodzi z adnotacji) | [DU/1997/555#U art. 100] |
 | 1.11.2028 | Kodeks cywilny | dodane § 3 i 4 w art. 860 | ustawa o CEIDG – Dz.U. 2026 poz. 507 | [DU/1964/93#U art. 860] |
 | 1.10.2029 | Kodeks postępowania karnego; Prawo o postępowaniu przed sądami administracyjnymi | m.in. doręczenia elektroniczne i pisma w postaci elektronicznej (k.p.k.: m.in. art. 100a, 100b, 116, 119, 120, 124; p.p.s.a.: m.in. art. 12b, 37a, 46, 49a, 65, 66) | Dz.U. 2020 poz. 2320 (oraz Dz.U. 2023 poz. 1860) | [DU/1997/555#U art. 123] |
 | 10.01.2030 | Kodeks spółek handlowych | dodane art. 402⁷ i 421¹ | ustawa z 17 kwietnia 2026 r. o zmianie niektórych ustaw w związku z przekazywaniem informacji do europejskiego pojedynczego punktu dostępu, Dz.U. 2026 poz. 644 | [DU/2000/1037#U art. 4026] |
 
 Cytaty z adnotacji potwierdzające poszczególne wiersze:
 
+- Prawo bankowe i Ordynacja podatkowa (11.01.2027): „Nowe brzmienie pkt 18 w art. 4 wejdzie w życie z dn. 11.01.2027 r. (Dz. U. z 2026 r. poz. 1206).” [DU/1997/939#U art. 4]; „Nowe brzmienie lit. c w pkt 1 w art. 119zg wejdzie w życie z dn. 11.01.2027 r. (Dz. U. z 2026 r. poz. 1206).” [DU/1997/926#U art. 119zg].
+- Ordynacja podatkowa (2.04.2027): „Dodany pkt 9 w § 1 w art. 297e wejdzie w życie z dn. 2.04.2027 r. (Dz. U. z 2025 r. poz. 1669).” [DU/1997/926#U art. 297g].
+- K.s.h. (19.05.2028): „Nowe brzmienie art. 88 wejdzie w życie z dn. 19.05.2028 r. (Dz. U. z 2026 r. poz. 187).” [DU/2000/1037#U art. 87]. Art. 88 jest w bazie wklejony w rekord art. 87.
+- K.p.k. (1.10.2028): „Dodany art. 100b wejdzie w życie z dn. 1.10.2028 r.” [DU/1997/555#U art. 100].
 - Prawo przedsiębiorców: „Zmiana w ust. 1 w art. 17 wejdzie w życie z dn. 14.10.2026 r. (Dz. U. z 2026 r. poz. 507).” [DU/2018/646#U art. 17] oraz „Zmiana w ust. 2 i 4 w art. 5 wejdzie w życie z dn. 14.10.2026 r. (Dz. U. z 2026 r. poz. 507).” [DU/2018/646#U art. 5].
 - K.p.c. (sztuczna inteligencja): „Dodany dział IVFA (art. 479[88a]–479[88j]) wejdzie w życie z dn. 28.10.2026 r. (Dz. U. z 2026 r. poz. 1003).” [DU/1964/296#U art. 479⁸⁸]. Ustawa o ochronie danych osobowych: „Dodany art. 59a wejdzie w życie z dn. 28.10.2026 r. (Dz. U. z 2026 r. poz. 1003).” [DU/2018/1000#U art. 63].
 - K.p.c. (5.11.2026): „Nowe brzmienie § 1[1] w art. 461 wejdzie w życie z dn. 5.11.2026 r. (Dz. U. z 2026 r. poz. 1046).” [DU/1964/296#U art. 461].

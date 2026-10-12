@@ -79,7 +79,7 @@ Użyj REST (`/api/search`, `/api/article`, `/api/act`) – patrz `ai/claude-skil
 
 ## Rozwiązywanie problemów
 - „Couldn't reach the MCP server” (claude.ai): adres musi być publiczny, HTTPS i kończyć się na `/api/mcp`; sprawdź, czy wdrożenie nie jest chronione logowaniem Vercel (Deployment Protection) i czy firewall nie blokuje `160.79.104.0/21`.
-- 401 – tylko w trybie zamkniętym (zły klucz/nagłówek). 429 – limit żądań, poczekaj `Retry-After`.
+- 401 – tylko w trybie zamkniętym (zły klucz/nagłówek). 429 – limit żądań, poczekaj `Retry-After`. Limit jest liczony po IP, a konektory chmurowe (claude.ai, ChatGPT, Gemini) dzielą adresy wielu użytkowników, więc 429 bywa wynikiem cudzego ruchu; domyślnie MCP ma 600 żądań/min/IP (zmienna `MCP_RATE_LIMIT`).
 - Timeout przy pierwszym wywołaniu – zimny start funkcji, ponów.
 - Po zmianie listy narzędzi na serwerze: ChatGPT – „Refresh” w ustawieniach wtyczki i nowa rozmowa; claude.ai – nowe połączenie; Claude Code – `/mcp` > reconnect.
 - Klucz trzymaj w sekrecie; nie commituj go do repozytorium.

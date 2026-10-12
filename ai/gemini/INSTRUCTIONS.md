@@ -33,7 +33,7 @@ Konfiguracja: plik globalny `~/.gemini/config/mcp_config.json` (Windows: `%USERP
   }
 }
 ```
-- Dla serwerów zdalnych używaj pola `serverUrl`; pola `url` i `httpUrl` z Gemini CLI NIE są tu obsługiwane. Nazwa bez myślnika (`prawo_pl`) – bezpieczniej, bo nie sprawdzono, czy myślnik jest dozwolony.
+- Dla serwerów zdalnych używaj pola `serverUrl`; pola `url` i `httpUrl` z Gemini CLI NIE są tu obsługiwane. Nazwa serwera zostaje w snake_case (`prawo_pl`): w Antigravity nie sprawdzono, czy myślnik jest dozwolony. Uwaga: w Gemini CLI (sekcja 2) jest odwrotnie – tam podkreślnik jest zabroniony i używamy `prawo-pl`.
 - Tryb zamknięty: dodaj `"headers": { "Authorization": "Bearer TWOJ_KLUCZ" }`.
 - Weryfikacja: w panelu wpisz `/mcp` (MCP Manager). Narzędzia MCP działają domyślnie w trybie „Ask” (każde wymaga zgody); regułę zezwalającą `mcp(prawo_pl/*)` ustawisz przez `/permissions`.
 - IDE: „...” u góry panelu agenta > MCP Servers > Manage MCP Servers > View raw config.
@@ -43,14 +43,16 @@ Konfiguracja: plik globalny `~/.gemini/config/mcp_config.json` (Windows: `%USERP
 Od 18.06.2026 Gemini CLI przestał obsługiwać użytkowników Google AI Pro/Ultra i darmowych indywidualnych użytkowników Code Assist (zastąpił go Antigravity CLI). Pozostaje dostępny przez płatne klucze API Gemini i dla klientów Gemini Code Assist Standard/Enterprise. Wymaga Node.js 20+.
 ```bash
 npm install -g @google/gemini-cli
-gemini mcp add --transport http --scope user prawo_pl https://TWOJA-DOMENA.vercel.app/api/mcp
+gemini mcp add --transport http --scope user prawo-pl https://TWOJA-DOMENA.vercel.app/api/mcp
 gemini mcp list      # w sesji: /mcp
+gemini mcp remove prawo-pl   # usuwanie
 ```
+Nazwa serwera to `prawo-pl` (z myślnikiem), bo dokumentacja Gemini CLI zabrania podkreślników w nazwach serwerów MCP: parser polityk dzieli nazwy narzędzi `mcp_serwer_narzedzie` na pierwszym podkreślniku, więc reguły i wildcardy mogłyby po cichu nie działać (źródła: geminicli.com/docs/tools/mcp-server/ i /docs/reference/policy-engine/). W Antigravity i Interactions API Gemini zostaje `prawo_pl` – tam obowiązują inne zasady.
 Albo ręcznie `~/.gemini/settings.json`; w Gemini CLI `httpUrl` = Streamable HTTP, a `url` = SSE:
 ```json
 {
   "mcpServers": {
-    "prawo_pl": {
+    "prawo-pl": {
       "httpUrl": "https://TWOJA-DOMENA.vercel.app/api/mcp",
       "timeout": 30000,
       "trust": true
@@ -67,7 +69,7 @@ from google import genai
 
 client = genai.Client()  # czyta GEMINI_API_KEY
 interaction = client.interactions.create(
-    model="gemini-3.8-flash",   # nazwa z przykładów w dokumentacji – sprawdź aktualną
+    model="gemini-2.5-flash",   # model wymieniony w Interactions jako wspierający zdalny MCP – sprawdź aktualną listę
     input="Co mówi art. 118 Kodeksu cywilnego o przedawnieniu? Podaj datę stanu danych.",
     tools=[{
         "type": "mcp_server",
@@ -77,9 +79,9 @@ interaction = client.interactions.create(
         # "allowed_tools": ["search_law", "get_article", "get_act"],
     }],
 )
-print(interaction)
+print(interaction.output_text)
 ```
-Uwaga: strona Interactions API w sekcji Limitations zawiera zdanie „Gemini 3 does not support remote MCP, this is coming soon”, a strona function calling pokazuje przykład na modelu Gemini 3.x. Nie da się rozstrzygnąć, która jest aktualna – przy błędzie spróbuj starszego modelu z listy obsługiwanych w Interactions (np. `gemini-2.5-flash`) albo użyj punktu 4. Odczyt tekstu odpowiedzi z obiektu `interaction` nie został zweryfikowany.
+Odczyt tekstu przez `interaction.output_text` jest pokazany w dokumentacji Interactions (snippet nie był uruchomiony na żywym API). Uwaga: strona Interactions API w sekcji Limitations zawiera zdanie „Gemini 3 does not support remote MCP, this is coming soon”, a strona function calling pokazuje przykład na modelu Gemini 3.x. Dlatego domyślnie użyto `gemini-2.5-flash`; wariant z `gemini-3.8-flash` może zwrócić błąd, dopóki Google nie zdejmie ograniczenia. W razie kłopotów użyj punktu 4.
 
 ## 4. Gemini API – function calling z REST (najpewniejsze)
 Zwykłe funkcje Pythona przekazane w `tools` SDK wywołuje automatycznie (automatic function calling). Uwaga z README SDK: w następnej wersji głównej AFC z bezpośrednich wywołań `generate_content` ma zniknąć – użyj wtedy `Chats` albo ręcznej pętli.
@@ -118,7 +120,7 @@ print(response.text)
 Alternatywa: zdefiniuj deklaracje funkcji ręcznie z JSON Schema z `ai/openai-actions/INSTRUCTIONS.md` (sekcja 6) lub wygeneruj z `/openapi.json` (obsługiwany jest tylko podzbiór schematu OpenAPI).
 
 ## 5. Klient MCP w SDK `google-genai` (eksperymentalne)
-README SDK: wbudowana obsługa MCP jest eksperymentalna – SDK przyjmuje lokalnie utworzoną sesję klienta MCP w `config.tools`. Przykłady Google pokazują tylko serwery stdio; połączenie ze zdalnym Streamable HTTP to kombinacja dwóch źródeł, niesprawdzona. Nazwa funkcji klienta HTTP w pakiecie `mcp` zależy od wersji (`streamablehttp_client` lub `streamable_http_client`; nowsza nie przyjmuje `headers=`). Jeśli to potrzebne – użyj punktu 4.
+README SDK: wbudowana obsługa MCP jest eksperymentalna – SDK przyjmuje lokalnie utworzoną sesję klienta MCP w `config.tools`. Przykłady Google pokazują tylko serwery stdio; połączenie ze zdalnym Streamable HTTP to kombinacja dwóch źródeł, niesprawdzona. Zainstaluj `pip install google-genai "mcp<2"`: przykład używa `streamablehttp_client` z pakietu `mcp` 1.x. W kliencie MCP v2 działa tylko `streamable_http_client`, bez parametrów `headers=`/`timeout=` (nagłówki ustawia się na przekazanym `http_client`), więc bez przypięcia wersji snippet może się wywrócić. Jeśli to potrzebne – użyj punktu 4.
 
 ## 6. Google AI Studio (interfejs webowy)
 Nie ma potwierdzenia, że da się tam podłączyć nasz serwer MCP. AI Studio służy do uzyskania klucza API (Get API key) dla punktów 3–5. Z pamięci (niezweryfikowane): w AI Studio można ręcznie wkleić deklaracje funkcji w JSON, ale wywołanie naszego API musiałbyś wykonać sam.

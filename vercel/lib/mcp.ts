@@ -15,9 +15,13 @@ export interface Deps {
 
 const KATEGORIE = ['ujednolicone', 'jednolite', 'podstawowe', 'zmieniajace', 'mp', 'orzeczenie', 'umowa', 'inne', 'wyrok', 'ue'];
 
+/** Wszystkie narzędzia tylko czytają dane – klienci (np. ChatGPT) nie muszą prosić o potwierdzenie każdego wywołania. */
+const READ_ONLY_ANNOTATIONS = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
+
 export const TOOLS = [
   {
     name: 'search_law',
+    title: 'Wyszukiwanie w prawie polskim',
     description:
       'Full-text search of Polish law (Dz.U. and M.P. acts, consolidated texts preferred). Returns ranked fragments with citation data (display_address, article, kategoria, source_url, warnings). ' +
       'Use it to find which act/article covers a topic; then verify the exact wording with get_article. Polish keywords work best (e.g. "zadośćuczynienie krzywda"). No result does not mean no rule exists. ' +
@@ -26,32 +30,36 @@ export const TOOLS = [
       type: 'object',
       properties: {
         query: { type: 'string', description: 'Search phrase in Polish / Fraza do wyszukania, po polsku.' },
-        kategoria: { type: 'string', enum: KATEGORIE, description: 'Optional category filter. Default excludes orzeczenie, umowa, inne. / Opcjonalny filtr kategorii.' },
-        act: { type: 'string', description: 'Optional ELI to restrict search to one act, e.g. "DU/1964/93". / Opcjonalnie ELI aktu.' },
+        kategoria: { type: 'string', enum: KATEGORIE, description: 'Optional category filter. Default excludes orzeczenie, umowa, inne, wyrok (court rulings, SAOS) and ue (EU law, CELEX): pass kategoria=wyrok or kategoria=ue to search them. / Opcjonalny filtr kategorii.' },
+        act: { type: 'string', description: 'Optional ELI/doc_id to restrict search to one act, e.g. "DU/1964/93", "SAOS/12345" or "CELEX/32016R0679". / Opcjonalnie ELI aktu.' },
         limit: { type: 'integer', minimum: 1, maximum: 20, default: 8, description: 'Number of results (1-20, default 8). / Liczba wyników.' },
       },
       required: ['query'],
       additionalProperties: false,
     },
+    annotations: READ_ONLY_ANNOTATIONS,
   },
   {
     name: 'get_article',
+    title: 'Pobranie artykułu aktu',
     description:
-      'Fetch the exact text of one article of an act. id is the ELI (e.g. "DU/1964/93") or doc_id ("DU/1964/93#U" = consolidated text). Without variant it prefers the consolidated text (#U), then the original. Never invent article numbers; verify them here. Text is truncated at 12000 chars (truncated=true). ' +
+      'Fetch the exact text of one article of an act. id is the ELI (e.g. "DU/1964/93") or doc_id ("DU/1964/93#U" = consolidated text; "SAOS/<id>" and "CELEX/<celex>" for rulings/EU acts, which have no #U and are fetched by article only for EU acts - rulings have no articles, read them via search). Without variant it prefers the consolidated text (#U), then the original. Never invent article numbers; verify them here. Text is truncated at 12000 chars (truncated=true). ' +
       '| Pobiera dokładną treść jednego artykułu aktu. id to ELI lub doc_id (#U = tekst ujednolicony). Bez variant preferowany tekst ujednolicony. Nie zgaduj numerów artykułów – zweryfikuj tutaj. Cytuj: display_address, art., kategoria, source_url.',
     inputSchema: {
       type: 'object',
       properties: {
-        id: { type: 'string', description: 'ELI or doc_id, e.g. "DU/1964/93" or "DU/1964/93#U".' },
+        id: { type: 'string', description: 'ELI or doc_id, e.g. "DU/1964/93", "DU/1964/93#U", "CELEX/32016R0679".' },
         art: { type: 'string', description: 'Article number, e.g. "445" or "46[1]" (also accepts "art. 46¹"). / Numer artykułu.' },
         variant: { type: 'string', enum: ['U'], description: '"U" forces the consolidated text. / "U" wymusza tekst ujednolicony.' },
       },
       required: ['id', 'art'],
       additionalProperties: false,
     },
+    annotations: READ_ONLY_ANNOTATIONS,
   },
   {
     name: 'get_act',
+    title: 'Metadane aktu prawnego',
     description:
       'Metadata of an act (title, display_address, kategoria, status, source_url, warnings), optionally with a table of contents (list of articles with headings). ' +
       '| Metadane aktu (tytuł, adres publikacyjny, kategoria, status, źródło, ostrzeżenia), opcjonalnie spis artykułów z nagłówkami (include_toc).',
@@ -65,6 +73,7 @@ export const TOOLS = [
       required: ['id'],
       additionalProperties: false,
     },
+    annotations: READ_ONLY_ANNOTATIONS,
   },
 ];
 

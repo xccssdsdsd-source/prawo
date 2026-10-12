@@ -26,6 +26,9 @@ sys.path.insert(0, str(ROOT))
 
 import update_data as ud  # noqa: E402
 
+ud.META_RETRY_PAUSE = 0      # testy nie czekaja na ponowienia metadanych
+ud.YEAR_RETRY_SLEEP = 0
+
 OBOW = "obowiązujący"
 TJ = "akt posiada tekst jednolity"
 UCH = "uchylony"
@@ -144,11 +147,21 @@ class Base(unittest.TestCase):
         self.dane = Path(self._tmp.name) / "dane"
         self.stan = Path(self._tmp.name) / "stan"
 
-    def run_ud(self, api, *extra, expect=0):
+    def run_ud(self, api, *extra, expect=0, consume=True):
         argv = ["--dane", str(self.dane), "--stan", str(self.stan), "--workers", "2", *extra]
         code = ud.main(argv, client=api)
         self.assertEqual(code, expect, f"kod wyjscia {code} != {expect}")
+        if consume:
+            self.consume()
         return code
+
+    def consume(self):
+        """Symuluje aktualizuj.py: zmiany.json wczytany do kolejki (stan/kolejka.json -> ingested)."""
+        zp = self.stan / "zmiany.json"
+        if zp.exists():
+            run_at = json.loads(zp.read_text(encoding="utf-8")).get("run_at")
+            (self.stan / "kolejka.json").write_text(
+                json.dumps({"ingested": {"zmiany.json": run_at}}), encoding="utf-8")
 
     def zmiany(self):
         return json.loads((self.stan / "zmiany.json").read_text(encoding="utf-8"))
@@ -589,6 +602,7 @@ class TestClientRetry(unittest.TestCase):
     def client(self, seq):
         import requests
         c = ud.Client(workers=2, retries=4, backoff=0.01)
+        c.COOL_STEP, c.COOL_MAX = 0.01, 0.02
         sess = self.Sess(seq)
         c._session = lambda: sess
         return c, sess, requests
@@ -740,7 +754,7 @@ class TestBootstrapOnSampleCopy(Base):
         a = sample["mp"][0]
         api.set_content("MP", a["year"], a["pos"], "<html>zmieniona tresc</html>", change="2099-01-01T00:00:00")
         api.item("MP", a["year"], a["pos"])["textHTML"] = True
-        self.run_ud(api)
+        self.run_ud(api, "--accept-shrink")   # prawdziwy plik z probki jest wiekszy niz tekst testowy
         z = self.zmiany()
         self.assertEqual(z["changed"], [f"MP/{a['year']}/{a['pos']}"])
         self.assertEqual(z["added"], [])
@@ -781,6 +795,219 @@ class LiveApi(Base):
         for k, v in before.items():
             if not k.endswith(".json"):
                 self.assertEqual(snapshot(self.dane).get(k), v, k)
+
+
+class TestVerifierFixes(Base):
+    """Poprawki po weryfikatorze: ponowienia lat, walidacja HTML, WAL, scalanie zmiany.json, progi per rok."""
+
+    # --- 1. metadane: ponowienia i wspolbieznosc
+    def test_default_workers_is_conservative(self):
+        self.assertEqual(ud.build_parser().parse_args([]).workers, 4)
+        self.assertLessEqual(ud.META_WORKERS, 4)
+
+    def test_failed_years_are_retried_sequentially(self):
+        api = many_acts(60)
+        api.add("DU", 2024, 1)
+        orig, calls = api.get, {"n": 0}
+
+        def flaky(url):
+            if url.endswith("/acts/DU/2024"):
+                calls["n"] += 1
+                if calls["n"] <= 2:          # pierwsza runda rownolegla: obie proby roku padaja
+                    raise ud.HttpError("ConnectionError dla roku (po 5 probach)")
+            return orig(url)
+        api.get = flaky
+        self.run_ud(api)
+        z = self.zmiany()
+        self.assertIn("DU/2024/1", z["added"], "rok odzyskany w sekwencyjnym ponowieniu")
+        self.assertFalse(z["partial"])
+        self.assertEqual(z["warnings"], [])
+
+    def test_year_still_failing_after_retries_stays_a_warning(self):
+        api = many_acts(60)
+        api.add("DU", 2024, 1)
+        api.fail_year.add(("DU", 2024))
+        self.run_ud(api)
+        z = self.zmiany()
+        self.assertTrue(z["partial"])
+        self.assertTrue(any("2024" in w for w in z["warnings"]))
+
+    def test_client_shared_cooldown_after_connection_errors(self):
+        import requests
+        c = ud.Client(workers=2, retries=3, backoff=0.0)
+        c.COOL_STEP, c.COOL_MAX = 0.01, 0.05
+        sess = TestClientRetry.Sess([requests.ConnectionError("x"), requests.ConnectionError("y"),
+                                     TestClientRetry.Resp(200, b"ok")])
+        c._session = lambda: sess
+        self.assertEqual(c.get("u"), (200, b"ok"))
+        self.assertEqual(c._conn_streak, 0, "sukces zeruje serie")
+        c._note_conn_error()
+        self.assertGreater(c._cool_until, 0)
+
+    # --- 2. walidacja tresci HTML
+    def test_valid_body_rejects_html_error_pages(self):
+        err = "<html><head><title>503 Service Unavailable</title></head><body>wróć później</body></html>".encode()
+        self.assertFalse(ud.valid_body(err, "html"))
+        self.assertFalse(ud.valid_body(b"Service Unavailable", "html"))
+        self.assertFalse(ud.valid_body("<!DOCTYPE html><html><title>Error</title></html>".encode(), "html"))
+        self.assertTrue(ud.valid_body("<!DOCTYPE HTML><html lang=pl><body>Art. 1</body></html>".encode(), "html"))
+
+    def test_error_page_does_not_overwrite_good_file(self):
+        api = self.basic_api()
+        self.run_ud(api)
+        path = self.dane / "podstawowe" / "DU_2025_1.html"
+        good = path.read_bytes()
+        api.set_content("DU", 2025, 1, "<html><title>503 Service Unavailable</title><body>x</body></html>",
+                        change="2026-06-06T06:06:06")
+        self.run_ud(api)
+        z = self.zmiany()
+        self.assertEqual(path.read_bytes(), good)
+        self.assertNotIn("DU/2025/1", z["changed"])
+        self.assertEqual([f["klucz"] for f in z["failed"]], ["DU/2025/1"])
+
+    def test_big_shrink_is_refused_unless_accepted_and_old_version_is_kept(self):
+        api = FakeApi()
+        api.add("DU", 2025, 1, text="<html><body>" + "A" * 5000 + "</body></html>")
+        api.add("MP", 2025, 1)
+        self.run_ud(api)
+        path = self.dane / "podstawowe" / "DU_2025_1.html"
+        old = path.read_bytes()
+        api.set_content("DU", 2025, 1, "<html><body>krotko</body></html>", change="2026-07-07T07:07:07")
+        self.run_ud(api)
+        self.assertEqual(path.read_bytes(), old, "podejrzane skurczenie nie nadpisuje")
+        self.assertEqual([f["klucz"] for f in self.zmiany()["failed"]], ["DU/2025/1"])
+        self.run_ud(api, "--accept-shrink")
+        self.assertEqual(self.zmiany()["changed"], ["DU/2025/1"])
+        prev = list((self.dane / "_wycofane" / "_poprzednie" / "podstawowe").glob("DU_2025_1*.html"))
+        self.assertEqual(len(prev), 1)
+        self.assertEqual(prev[0].read_bytes(), old, "poprzednia wersja zachowana przed nadpisaniem")
+
+    def test_normal_change_keeps_previous_copy(self):
+        api = self.basic_api()
+        self.run_ud(api)
+        old = (self.dane / "podstawowe" / "DU_2025_1.html").read_bytes()
+        api.set_content("DU", 2025, 1, "<html>nowa wersja</html>", change="2026-08-08T08:08:08")
+        self.run_ud(api)
+        prev = list((self.dane / "_wycofane" / "_poprzednie" / "podstawowe").glob("*.html"))
+        self.assertEqual([p.read_bytes() for p in prev], [old])
+
+    # --- 3. write-ahead przy twardym przerwaniu
+    def test_hard_kill_after_overwrite_does_not_lose_change(self):
+        api = self.basic_api()
+        self.run_ud(api)
+        m = self.manifest()
+        for e in m.values():
+            e["sha256"] = None                    # jak po --bootstrap bez --hash
+        (self.stan / "manifest.json").write_text(json.dumps(m), encoding="utf-8")
+        api.set_content("DU", 2025, 1, "<html>zmiana tresci PRZED zabiciem</html>", change="2026-09-09T09:09:09")
+        orig_cp = ud.Store.checkpoint
+
+        def killed(store):
+            if store.wal_path.exists():
+                raise SystemExit(9)               # twarde przerwanie po nadpisaniu pliku, przed zapisem manifestu
+            orig_cp(store)
+        ud.Store.checkpoint = killed
+        try:
+            with self.assertRaises(SystemExit):
+                self.run_ud(api)
+        finally:
+            ud.Store.checkpoint = orig_cp
+        self.assertTrue((self.stan / "biezacy_przebieg.wal").is_file())
+        (self.stan / "update.lock").unlink(missing_ok=True)
+        self.run_ud(api)                          # kolejny przebieg widzi "same", ale WAL pamieta zmiane
+        self.assertIn("DU/2025/1", self.zmiany()["changed"])
+        self.assertFalse((self.stan / "biezacy_przebieg.wal").exists())
+
+    # --- 4. zmiany.json nie ginie miedzy przebiegami
+    def test_unconsumed_zmiany_are_merged_into_next_run(self):
+        api = self.basic_api()
+        self.run_ud(api, consume=False)
+        api.add("DU", 2025, 10)
+        self.run_ud(api, consume=False)           # nikt nie wczytal zmiany.json z pierwszego przebiegu
+        z = self.zmiany()
+        self.assertIn("DU/2025/1", z["added"])
+        self.assertIn("DU/2025/10", z["added"])
+        self.assertGreater(z["merged_previous"], 0)
+        self.assertTrue(any("niezuzytych" in w for w in z["warnings"]))
+        api.add("DU", 2025, 11)
+        self.run_ud(api)                          # consume=True po tym przebiegu
+        api.add("DU", 2025, 12)
+        self.run_ud(api)
+        z = self.zmiany()
+        self.assertEqual(z["added"], ["DU/2025/12"], "skonsumowane zmiany nie sa powtarzane")
+        self.assertEqual(z["merged_previous"], 0)
+
+    def test_merge_ops_rules(self):
+        self.assertEqual(ud.combine_ops({"a": "added"}, {"a": "changed"}), {"a": "added"})
+        self.assertEqual(ud.combine_ops({"a": "changed"}, {"a": "removed"}), {"a": "removed"})
+        self.assertEqual(ud.combine_ops({"a": "removed"}, {"a": "added"}), {"a": "changed"})
+
+    # --- 5. progi wycofan per rok
+    def _api_two_years(self, n_big=200, n_small=10):
+        api = FakeApi()
+        for p in range(1, n_big + 1):
+            api.add("DU", 2025, p)
+        for p in range(1, n_small + 1):
+            api.add("DU", 2010, p)
+        api.add("MP", 2025, 1)
+        return api
+
+    def test_year_with_zeroed_status_is_not_withdrawn(self):
+        api = self._api_two_years()
+        self.run_ud(api)
+        for p in range(1, 6):                    # 5 z 10 w roku 2010 bez statusu; globalnie 5/210 = 2,4% < 3%
+            api.item("DU", 2010, p)["status"] = ""
+        self.run_ud(api)
+        z = self.zmiany()
+        self.assertEqual(z["removed"], [])
+        self.assertTrue(z["partial"])
+        self.assertTrue(any("2010" in w for w in z["warnings"]), z["warnings"])
+        self.assertTrue((self.dane / "podstawowe" / "DU_2010_1.html").is_file())
+
+    def test_year_with_high_share_of_withdrawals_is_skipped(self):
+        api = self._api_two_years()
+        self.run_ud(api)
+        for p in range(1, 6):                    # 5 z 10 uchylonych z poprawnym statusem, ale to 50% roku
+            api.item("DU", 2010, p)["status"] = UCH
+        self.run_ud(api)
+        z = self.zmiany()
+        self.assertEqual(z["removed"], [])
+        self.assertTrue(z["partial"])
+        # po sprawdzeniu przyczyny wolno wymusic
+        self.run_ud(api, "--force-removals")
+        self.assertEqual(len(self.zmiany()["removed"]), 5)
+
+    def test_small_legit_withdrawal_in_big_year_still_works(self):
+        api = self._api_two_years()
+        self.run_ud(api)
+        api.item("DU", 2025, 7)["status"] = UCH
+        self.run_ud(api)
+        self.assertEqual(self.zmiany()["removed"], ["DU/2025/7"])
+
+    # --- 6. blokada i indeksy
+    def test_pid_alive_and_stale_lock_takeover(self):
+        import time
+        self.assertTrue(ud.pid_alive(os.getpid()))
+        self.assertFalse(ud.pid_alive(0))
+        self.stan.mkdir(parents=True, exist_ok=True)
+        lock = self.stan / "update.lock"
+        old = time.time() - 4 * 3600
+        lock.write_text(f"{os.getpid()} 2026-01-01T00:00:00\n", encoding="utf-8")
+        os.utime(lock, (old, old))
+        with self.assertRaises(ud.Fatal):         # stara blokada, ale wlasciciel zyje (my) => nie przejmujemy
+            ud.acquire_lock(self.stan)
+        lock.write_text("999999999 2026-01-01T00:00:00\n", encoding="utf-8")
+        os.utime(lock, (old, old))
+        got = ud.acquire_lock(self.stan)          # wlasciciel nie zyje => przejmujemy
+        got.unlink()
+
+    def test_indexes_keep_crlf_like_existing_files(self):
+        api = self.basic_api()
+        self.run_ud(api)
+        raw = (self.dane / "indeks_obowiazujacych.json").read_bytes()
+        self.assertIn(b"\r\n", raw)
+        self.assertEqual(raw.count(b"\n"), raw.count(b"\r\n"))
+        json.loads(raw.decode("utf-8"))
 
 
 if __name__ == "__main__":

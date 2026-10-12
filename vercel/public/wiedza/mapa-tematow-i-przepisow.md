@@ -82,7 +82,7 @@ Dla większości spraw obywatelskich wystarczy kilka aktów: Kodeks cywilny (umo
 | Odpowiedzialność materialna pracownika | art. 114 | pracownik, który wskutek niewykonania lub nienależytego wykonania obowiązków ze swej winy wyrządził pracodawcy szkodę, odpowiada według zasad Kodeksu pracy [DU/1974/141#U art. 114] |
 | Czas pracy | art. 129 | 8 godzin na dobę i przeciętnie 40 godzin tygodniowo [DU/1974/141#U art. 129] |
 | Urlop wypoczynkowy | art. 152, 154 | prawo do corocznego płatnego urlopu (152); wymiar 20 lub 26 dni (154) [DU/1974/141#U art. 152] [DU/1974/141#U art. 154] |
-| Mobbing | art. 94³ | uwaga: nowe brzmienie od 5.11.2026 – `nadchodzace-zmiany` [DU/1974/141#U art. 942] |
+| Mobbing | art. 94³ | uwaga: nowe brzmienie od 5.11.2026 – `nadchodzace-zmiany`; w bazie wklejony w rekord art. 94² (art=942) [DU/1974/141#U art. 942] |
 | Spory z pracodawcą | art. 242, 264 | droga sądowa (242); 21 dni na odwołanie od wypowiedzenia (264) [DU/1974/141#U art. 242] [DU/1974/141#U art. 264] |
 | Przedawnienie roszczeń | art. 291 | `terminy-i-przedawnienie` [DU/1974/141#U art. 291] |
 | Zasada korzystności | art. 18 | [DU/1974/141#U art. 18] |
@@ -123,7 +123,7 @@ Dla większości spraw obywatelskich wystarczy kilka aktów: Kodeks cywilny (umo
 | Zasady Prawa przedsiębiorców | art. 1 | zasady podejmowania, wykonywania i zakończenia działalności gospodarczej [DU/2018/646#U art. 1] |
 | Spółka z o.o. | art. 151, 201 k.s.h. | utworzenie w każdym prawnie dopuszczalnym celu (151); zarząd prowadzi sprawy i reprezentuje spółkę (201) [DU/2000/1037#U art. 151] [DU/2000/1037#U art. 201] |
 | Odpowiedzialność członków zarządu | art. 299 k.s.h. | jeżeli egzekucja przeciw spółce jest bezskuteczna, członkowie zarządu odpowiadają solidarnie; możliwość uwolnienia się (§ 2) [DU/2000/1037#U art. 299] |
-| Uchwały wspólników | art. 249–252 k.s.h. | zaskarżenie, uprawnieni i terminy [DU/2000/1037#U art. 249] [DU/2000/1037#U art. 250] [DU/2000/1037#U art. 251] [DU/2000/1037#U art. 252] |
+| Uchwały wspólników | art. 249–252 k.s.h. | zaskarżenie, uprawnieni i terminy (uwaga: rekord o numerze 251 zawiera dwa przepisy, art. 25¹ i art. 251 – patrz `terminy-i-przedawnienie`, pkt 8 w pułapkach) [DU/2000/1037#U art. 249] [DU/2000/1037#U art. 250] [DU/2000/1037#U art. 251] [DU/2000/1037#U art. 252] |
 | Ochrona danych osobowych | art. 1 ustawy o ochronie danych osobowych | ustawa stosuje się do ochrony osób fizycznych w związku z przetwarzaniem danych w zakresie art. 2 i 3 RODO [DU/2018/1000#U art. 1] |
 
 ## 8. Administracja i podatki

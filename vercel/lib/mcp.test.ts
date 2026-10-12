@@ -43,6 +43,13 @@ describe('MCP JSON-RPC', () => {
     expect(l.result.tools.map((t: any) => t.name)).toEqual(['search_law', 'get_article', 'get_act']);
     expect(TOOLS[1].inputSchema.required).toEqual(['id', 'art']);
   });
+  it('kazde narzedzie ma adnotacje tylko-do-odczytu i tytul', async () => {
+    const l = await handleMessage(mk(), { jsonrpc: '2.0', id: 5, method: 'tools/list' });
+    for (const t of l.result.tools) {
+      expect(typeof t.title).toBe('string');
+      expect(t.annotations).toEqual({ readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false });
+    }
+  });
   it('nieznana metoda', async () => {
     expect((await handleMessage(mk(), { jsonrpc: '2.0', id: 4, method: 'foo' })).error.code).toBe(-32601);
   });
@@ -97,5 +104,12 @@ describe('MCP JSON-RPC', () => {
   it('batch', async () => {
     const r = await handleHttp(mk(), 'POST', [{ jsonrpc: '2.0', id: 1, method: 'ping' }, { jsonrpc: '2.0', method: 'notifications/initialized' }]);
     expect(JSON.parse(r.body!)).toHaveLength(1);
+  });
+});
+
+describe('handleHttp: body jako Buffer/string', () => {
+  it('string JSON jest parsowany', async () => {
+    const r = await handleHttp({} as any, 'POST', JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'ping' }));
+    expect(r.status).toBe(200);
   });
 });

@@ -51,7 +51,7 @@ Ważne fakty, które potwierdzają nasze dane i ustawy:
 | Portal | Adres | Co zawiera | Pewność |
 |---|---|---|---|
 | **UODO** (ochrona danych osobowych) | https://uodo.gov.pl | Wytyczne EROD, aktualności, decyzje Prezesa UODO w zakładce „Orzecznictwo” (ścieżkę sprawdź ręcznie). | częściowo |
-| **UOKiK** | https://uokik.gov.pl; decyzje: https://decyzje.uokik.gov.pl; rejestr klauzul niedozwolonych: https://rejestr.uokik.gov.pl | Decyzje Prezesa UOKiK i wyroki SOKiK wpisane do rejestru klauzul niedozwolonych (sygnatura, data wpisu, branża). | sprawdzone (adresy) |
+| **UOKiK** | https://uokik.gov.pl; decyzje: https://decyzje.uokik.gov.pl/bp/dec_prez.nsf (sam adres https://decyzje.uokik.gov.pl przekierowuje na stronę główną UOKiK); rejestr klauzul niedozwolonych: https://rejestr.uokik.gov.pl | Decyzje Prezesa UOKiK i wyroki SOKiK wpisane do rejestru klauzul niedozwolonych (sygnatura, data wpisu, branża). | częściowo (adresy) |
 | **KNF** | https://www.knf.gov.pl | Komunikaty, ostrzeżenia publiczne, dane i opracowania, rekomendacje; wyszukiwarka z filtrami kategorii; RSS. | częściowo |
 | **BIP** | https://www.gov.pl/web/bip | Biuletyn Informacji Publicznej; wiele organów ma własny BIP. Wniosek o udostępnienie informacji publicznej składa się do organu – zob. ustawa o dostępie do informacji publicznej (Dz.U. 2001 nr 112 poz. 1198: `DU/2001/1198#U` w bazie). | z pamięci |
 

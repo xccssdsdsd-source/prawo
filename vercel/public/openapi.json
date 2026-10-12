@@ -21,7 +21,7 @@
       "get": {
         "operationId": "searchLaw",
         "summary": "Szukaj w przepisach / Search Polish law",
-        "description": "Wyszukiwanie pełnotekstowe po fragmentach aktów. Zapytanie typu „art. 445 kodeks cywilny” zwraca dokładny artykuł jako pierwszy wynik. Domyślnie pomija kategorie orzeczenie, umowa, inne.",
+        "description": "Wyszukiwanie pełnotekstowe po fragmentach aktów. Zapytanie typu „art. 445 kodeks cywilny” zwraca dokładny artykuł jako pierwszy wynik. Domyślnie pomija kategorie orzeczenie, umowa, inne, wyrok i ue (wyroki sądów i prawo UE tylko przez kategoria=wyrok lub kategoria=ue).",
         "parameters": [
           {
             "name": "q",
@@ -47,16 +47,16 @@
             "schema": {
               "$ref": "#/components/schemas/Kategoria"
             },
-            "description": "Ogranicz do kategorii. Bez parametru: wykluczone orzeczenie, umowa, inne. / Restrict to a category."
+            "description": "Ogranicz do kategorii. Bez parametru: wykluczone orzeczenie, umowa, inne, wyrok, ue. / Restrict to a category."
           },
           {
             "name": "act",
             "in": "query",
             "schema": {
               "type": "string",
-              "pattern": "^[A-Za-z]+/\\d{4}/\\d+(#U)?$"
+              "pattern": "^([A-Za-z]+/\\d{4}/\\d+(#U)?|(SAOS|CELEX)/[A-Za-z0-9._-]+)$"
             },
-            "description": "Ogranicz do aktu (ELI), np. DU/1964/93. / Restrict to one act (ELI).",
+            "description": "Ogranicz do aktu (ELI lub doc_id), np. DU/1964/93, SAOS/12345, CELEX/32016R0679. / Restrict to one act (ELI or doc_id).",
             "example": "DU/1964/93"
           },
           {
@@ -147,7 +147,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "ELI aktu lub doc_id, np. DU/1964/93 lub DU/1964/93#U (# jako %23). / Act ELI or doc_id.",
+            "description": "ELI aktu lub doc_id, np. DU/1964/93, DU/1964/93#U (# jako %23), SAOS/12345 lub CELEX/32016R0679. / Act ELI or doc_id.",
             "example": "DU/1964/93"
           },
           {

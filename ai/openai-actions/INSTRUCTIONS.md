@@ -22,7 +22,8 @@ Niezweryfikowane w oficjalnej dokumentacji OpenAI: wymagane plany (źródła zew
 5. Authentication: **No authentication**. W UI nie ma pola na nagłówek Bearer ani `x-api-key` – jeśli włączysz `API_KEY` na serwerze, ta wtyczka przestanie działać.
 6. Zaznacz potwierdzenie ostrzeżenia o ryzyku i kliknij **Create as a plugin**.
 7. Zainstaluj wtyczkę. W nowej rozmowie wpisz `@` i wybierz ją. Po zmianie narzędzi na serwerze kliknij **Refresh** w ustawieniach wtyczki.
-8. Bez adnotacji `readOnlyHint` przy narzędziach ChatGPT może prosić o potwierdzenie każdego wywołania.
+8. Nasz serwer oznacza wszystkie trzy narzędzia adnotacją `readOnlyHint: true` (w `tools/list`), więc ChatGPT nie powinien prosić o potwierdzenie każdego wywołania. Jeśli prosi, wdrożenie jest prawdopodobnie starsze – zaktualizuj je i kliknij **Refresh** w ustawieniach wtyczki.
+9. Limit żądań jest liczony po IP, a ChatGPT łączy się z chmury OpenAI (wspólne adresy wielu użytkowników), więc 429 bywa wynikiem cudzego ruchu; właściciel może podnieść `MCP_RATE_LIMIT`.
 Polityki workspace (np. Lockdown) mogą blokować własne serwery – wtedy poproś administratora.
 
 ## 2. Custom GPT z Actions (przejściowo, do wygaszenia)
@@ -76,8 +77,8 @@ curl https://api.openai.com/v1/responses \
 - Tryb zamknięty (`API_KEY`): dodaj `"headers": {"Authorization": "Bearer TWOJ_KLUCZ"}` (pole `headers` jest w referencji API; poradnik go nie opisuje).
 - W odpowiedzi: elementy `mcp_list_tools`, `mcp_call`, `mcp_approval_request`.
 
-## 4. Agents SDK (częściowo zweryfikowane)
-Python, tryb lokalny (nazwy pakietów i dokładna sygnatura konstruktora z pamięci):
+## 4. Agents SDK (Python zweryfikowany z dokumentacją, TypeScript nie)
+Python, tryb lokalny (import `MCPServerStreamableHttp`, `params` z `url`/`headers`/`timeout`, `cache_tools_list` zgadzają się z dokumentacją Agents SDK):
 ```python
 import asyncio
 from agents import Agent, Runner
@@ -97,7 +98,7 @@ async def main():
 
 asyncio.run(main())
 ```
-TypeScript, tryb hostowany: `hostedMcpTool({ serverLabel: 'prawo_pl', serverUrl: 'https://TWOJA-DOMENA.vercel.app/api/mcp', requireApproval: 'never', allowedTools: ['search_law','get_article','get_act'] })`.
+TypeScript, tryb hostowany (sygnatura `hostedMcpTool` niesprawdzona): `hostedMcpTool({ serverLabel: 'prawo_pl', serverUrl: 'https://TWOJA-DOMENA.vercel.app/api/mcp', requireApproval: 'never', allowedTools: ['search_law','get_article','get_act'] })`.
 
 ## 5. Codex CLI (zweryfikowane)
 `~/.codex/config.toml` (Windows prawdopodobnie `%USERPROFILE%\.codex\config.toml`):
@@ -107,8 +108,11 @@ url = "https://TWOJA-DOMENA.vercel.app/api/mcp"
 enabled_tools = ["search_law", "get_article", "get_act"]
 startup_timeout_sec = 20
 tool_timeout_sec = 60
-# tylko w trybie zamkniętym: bearer_token_env_var = "PRAWO_API_KEY"
+# tylko w trybie zamkniętym (klucz zostaje w zmiennej środowiskowej, nie w pliku):
+# bearer_token_env_var = "PRAWO_API_KEY"
+# albo: env_http_headers = { "x-api-key" = "PRAWO_API_KEY" }
 ```
+Szybciej, bez edycji pliku: `codex mcp add prawo_pl --url https://TWOJA-DOMENA.vercel.app/api/mcp` (forma z adresem pokazana w dokumentacji Codex).
 Weryfikacja: `codex mcp list`, w TUI `/mcp`.
 
 ## 6. Function calling (bez MCP, własna pętla)

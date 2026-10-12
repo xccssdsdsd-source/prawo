@@ -9,9 +9,12 @@ export const KATEGORIE = [
   'ujednolicone', 'jednolite', 'podstawowe', 'zmieniajace', 'mp',
   'orzeczenie', 'umowa', 'inne', 'wyrok', 'ue',
 ] as const;
-export const DEFAULT_EXCLUDED = ['orzeczenie', 'umowa', 'inne'];
+// Domyślnie pomijane: nie są przepisami krajowymi (wyroki i akty UE tylko przez kategoria=wyrok|ue).
+export const DEFAULT_EXCLUDED = ['orzeczenie', 'umowa', 'inne', 'wyrok', 'ue'];
 const MAX_ARTICLE_CHARS = 12000;
-const ELI_RE = /^[A-Za-z]+\/\d{4}\/\d+(#U)?$/;
+// ELI/doc_id aktu: DU/1964/93, DU/1964/93#U, MP/2026/977 oraz identyfikatory uśpionych źródeł:
+// SAOS/<id> (wyroki) i CELEX/<numer celex> (prawo UE) - bez sufiksu #U.
+const ELI_RE = /^(?:[A-Za-z]+\/\d{4}\/\d+(?:#U)?|(?:SAOS|CELEX)\/[A-Za-z0-9._-]+)$/i;
 
 // ---------- SQL (stałe; bez sklejania wartości użytkownika) ----------
 
@@ -106,10 +109,10 @@ function toResult(r: Row, snippet: string, score: number): SearchResult {
   };
 }
 
-function normalizeEli(act: string | undefined): string | null {
+export function normalizeEli(act: string | undefined): string | null {
   if (!act) return null;
   const a = act.trim();
-  if (!ELI_RE.test(a)) throw new ApiError(400, 'bad_request', 'Parametr act musi mieć postać ELI, np. DU/1964/93.');
+  if (!ELI_RE.test(a)) throw new ApiError(400, 'bad_request', 'Parametr act musi mieć postać ELI lub doc_id, np. DU/1964/93, SAOS/12345 lub CELEX/32016R0679.');
   return a.replace(/#U$/i, '').toUpperCase();
 }
 
@@ -174,12 +177,14 @@ export async function searchLaw(opts: {
 
 // ---------- artykuł ----------
 
-function docCandidates(id: string, variant?: string): string[] {
+export function docCandidates(id: string, variant?: string): string[] {
   const v = (variant ?? '').trim().toUpperCase();
   if (v && v !== 'U') throw new ApiError(400, 'bad_request', 'Parametr variant może mieć tylko wartość U.');
-  if (!ELI_RE.test(id.trim())) throw new ApiError(400, 'bad_request', 'Parametr id musi mieć postać ELI lub doc_id, np. DU/1964/93 lub DU/1964/93#U.');
+  if (!ELI_RE.test(id.trim())) throw new ApiError(400, 'bad_request', 'Parametr id musi mieć postać ELI lub doc_id, np. DU/1964/93, DU/1964/93#U, SAOS/12345 lub CELEX/32016R0679.');
   const raw = id.trim();
   const base = raw.replace(/#U$/i, '').toUpperCase();
+  // wyroki (SAOS) i akty UE (CELEX) nie mają wariantu #U
+  if (/^(SAOS|CELEX)\//.test(base)) return [base];
   if (/#U$/i.test(raw) || v === 'U') return [`${base}#U`];
   return [`${base}#U`, base];
 }

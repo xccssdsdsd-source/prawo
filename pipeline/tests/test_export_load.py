@@ -163,7 +163,7 @@ class TestExportChanged(ExportFixture):
         self.assertNotIn("�", self.out.read_text(encoding="utf-8"))
         # brak plikow tymczasowych, raport zapisany
         self.assertEqual([p.name for p in self.out_dir.glob("*.tmp")], [])
-        self.assertIn("added=2, changed=1, removed=1", (self.out_dir / "raport.txt").read_text(encoding="utf-8"))
+        self.assertIn("added=2, changed=1, removed=1", (self.out_dir / "raport_changed.txt").read_text(encoding="utf-8"))
 
     def test_changed_error_keeps_old_rows_and_notext_drops_them(self):
         self.assertEqual(self.export()[0], 0)
@@ -298,6 +298,16 @@ class TestLoaderNoDb(unittest.TestCase):
         self.assertEqual(docs["DU/1/2"]["src"], 1)
         only = ld.scan([a, b], None, only_ids={"DU/1/2"})
         self.assertEqual(set(only), {"DU/1/2"})
+
+    def test_skipped_file_roundtrip(self):
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "pominiete_limit.json"
+            self.assertEqual(ld.load_skipped(f), [])
+            ld.save_skipped(f, {"DU/1/2", "DU/1/1"}, 450)
+            self.assertEqual(ld.load_skipped(f), ["DU/1/1", "DU/1/2"])
+            ld.save_skipped(f, set())
+            self.assertFalse(f.exists())
+            ld.save_skipped(f, set())      # brak pliku nie jest bledem
 
     def test_plan_sync(self):
         docs = {"A": {}, "B": {}}

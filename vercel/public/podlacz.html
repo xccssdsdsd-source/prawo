@@ -118,6 +118,7 @@ footer p{margin:0 0 6px}
     <a href="#test">Test połączenia</a>
     <a href="#prompt">Prompt</a>
     <a href="#stan-danych">Stan danych</a>
+    <a href="#prywatnosc">Prywatność</a>
     <a href="#problemy">Problemy</a>
   </nav>
   <button type="button" class="ghost small-btn" id="theme-btn" aria-label="Motyw kolorystyczny: automatyczny. Kliknij, aby zmienić.">Motyw: auto</button>
@@ -211,6 +212,18 @@ Zasady:
     <li>To narzędzie pomocnicze, nie porada prawna. Aktualne brzmienie przepisu sprawdź w <a href="https://isap.sejm.gov.pl">ISAP</a>.</li>
   </ul>
   <p id="data-extra" class="hint"></p>
+</section>
+
+<section id="prywatnosc" aria-labelledby="h-priv">
+  <h2 id="h-priv">Prywatność</h2>
+  <p class="sub">Co się dzieje z Twoimi pytaniami.</p>
+  <div class="callout warn" role="note">
+    <p><strong>Nie wpisuj w pytaniach danych osobowych ani tajemnicy sprawy.</strong> Zapytania, które model wysyła do narzędzi (np. fraza w <code>search_law</code>), trafiają do publicznego serwera i mogą zostać zapisane w jego logach (hosting, baza danych, ewentualnie dostawca modelu). Pytaj ogólnie o przepisy („termin przedawnienia roszczeń z umowy”), a nie o konkretne osoby, numery spraw czy adresy.</p>
+  </div>
+  <ul class="plain">
+    <li>Treść rozmowy z asystentem przetwarza także dostawca modelu (Anthropic, OpenAI, Google i inni) na swoich zasadach – sprawdź je osobno.</li>
+    <li>Serwer nie wymaga logowania, więc nie wiąże zapytań z kontem, ale adresy IP mogą trafiać do logów platformy hostingowej.</li>
+  </ul>
 </section>
 
 <section id="problemy" aria-labelledby="h-prob">
@@ -355,6 +368,8 @@ Value:        TWOJ_KLUCZ`]
   "Plan Free: tylko jeden własny konektor.",
   "Ustawień uwierzytelniania (w tym nagłówków) nie da się zmienić po dodaniu – usuń konektor i dodaj ponownie.",
   "Limity: wynik narzędzia ok. 150 000 znaków, limit czasu ok. 240 s na wywołanie (jeden artykuł pomocy podaje 300 s – przyjmij niższą wartość).",
+  "Układ okna dodawania konektora zależy od organizacji i wersji: bywa jeden ekran (z sekcją „Advanced settings”) albo dwa kroki; w dokumentacji opcja nazywa się „No sign-in”, a w interfejsie „No sign in”. W planach Free/Pro/Max krok może nazywać się po prostu **Add custom connector** (bez wcześniejszego **+ Add**).",
+  "Jeśli używasz sekcji „Request headers” (beta), wpisz całą wartość nagłówka razem z prefiksem `Bearer ` (np. `Bearer TWOJ_KLUCZ`).",
   "Transport: adres kończący się na `/sse` wybiera przestarzały SSE; nasz kończy się na `/mcp` (Streamable HTTP) – to właściwy wybór.",
   "Claude nie czyta automatycznie `/llms.txt` ani `/openapi.json`. W dokumentacji nie znaleziono możliwości dodania specyfikacji OpenAPI jako konektora – dla Claude używaj MCP."
  ],
@@ -376,7 +391,8 @@ Authentication:  No sign in`]],
  warns:[],
  notes:[
   "Serwer jest bez uwierzytelniania, więc ewentualny klucz w „Request headers” byłby wspólnym kluczem całej organizacji (nie identyfikuje użytkownika).",
-  "Ustawień uwierzytelniania nie da się zmienić po dodaniu."
+  "Ustawień uwierzytelniania nie da się zmienić po dodaniu.",
+  "Układ okna dodawania bywa jedno- lub dwuekranowy. W „Request headers” (beta) wpisujesz całą wartość nagłówka z prefiksem `Bearer `."
  ],
  src:[["https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp"],["https://claude.com/docs/connectors/custom/add-unlisted.md"]]},
 
@@ -540,6 +556,10 @@ curl https://api.anthropic.com/v1/messages \
     ]
   }'`],
   ["Python","python",R`
+import anthropic
+
+client = anthropic.Anthropic()  # czyta ANTHROPIC_API_KEY ze zmiennej środowiskowej
+
 response = client.beta.messages.create(
     model="MODEL_ID",
     max_tokens=1000,
@@ -547,7 +567,8 @@ response = client.beta.messages.create(
     mcp_servers=[{"type": "url", "url": "__BASE__/api/mcp", "name": "prawo-pl"}],
     tools=[{"type": "mcp_toolset", "mcp_server_name": "prawo-pl"}],
     betas=["mcp-client-2025-11-20"],
-)`],
+)
+print(response.content)`],
   ["Tryb zamknięty: pole authorization_token","json",R`
 {"type": "url", "url": "__BASE__/api/mcp", "name": "prawo-pl", "authorization_token": "TWOJ_KLUCZ"}`,true]
  ],
@@ -632,7 +653,7 @@ cp ai/claude-skill/SKILL.md ~/.claude/skills/prawo-pl/SKILL.md`]
   }
 }`,true]
  ],
- warns:["Dla serwerów zdalnych używaj pola `serverUrl`. Stare pola `url` i `httpUrl` z Gemini CLI NIE są tu obsługiwane. Nazwa serwera bez myślnika (`prawo_pl`) – nie sprawdzono, czy myślnik jest dozwolony."],
+ warns:["Dla serwerów zdalnych używaj pola `serverUrl`. Stare pola `url` i `httpUrl` z Gemini CLI NIE są tu obsługiwane. Nazwa serwera zostaje w snake_case (`prawo_pl`) – tu nie sprawdzono, czy myślnik jest dozwolony, a w Gemini CLI jest odwrotnie: tam podkreślnik jest zabroniony i używamy `prawo-pl`."],
  notes:["Pole `type` nie jest udokumentowane. Obsługa pola `headers` w tym pliku nie jest pokazana w przeczytanej dokumentacji – snippet z kluczem traktuj jako niezweryfikowany.","Nie ma pełnego parytetu funkcji z Gemini CLI (wg bloga Google). Nie testowano z naszym wdrożonym serwerem."],
  src:[["https://antigravity.google/docs/mcp"],["https://antigravity.google/docs/mcp?tab=cli"],["https://antigravity.google/docs/getting-started?tab=cli"],["https://antigravity.google/docs/cli/gcli-migration"],["https://developers.googleblog.com/en/an-important-update-transitioning-gemini-cli-to-antigravity-cli/"]]},
 
@@ -643,36 +664,36 @@ cp ai/claude-skill/SKILL.md ~/.claude/skills/prawo-pl/SKILL.md`]
   "Instalacja (jeśli masz do niego dostęp): `npm install -g @google/gemini-cli`.",
   "Opcja A – komenda: `gemini mcp add --transport http …` (domyślny zakres to project; `-s user` robi wpis globalny).",
   "Opcja B – ręcznie w `~/.gemini/settings.json` (globalnie) lub `.gemini/settings.json` (projekt). W tym narzędziu `httpUrl` oznacza Streamable HTTP, a `url` – SSE, więc użyj `httpUrl`.",
-  "Uruchom ponownie Gemini CLI. Sprawdź: w sesji `/mcp` (statusy CONNECTED / CONNECTING / DISCONNECTED), poza sesją `gemini mcp list`. Usuwanie: `gemini mcp remove prawo_pl`.",
-  "Użycie: pytaj po polsku, np. „Co mówi art. 118 KC? Użyj narzędzi prawo_pl.”"
+  "Uruchom ponownie Gemini CLI. Sprawdź: w sesji `/mcp` (statusy CONNECTED / CONNECTING / DISCONNECTED), poza sesją `gemini mcp list`. Usuwanie: `gemini mcp remove prawo-pl`.",
+  "Użycie: pytaj po polsku, np. „Co mówi art. 118 KC? Użyj narzędzi prawo-pl.”"
  ],
  snips:[
-  ["Komenda","bash",R`gemini mcp add --transport http --scope user --timeout 30000 --trust prawo_pl __BASE__/api/mcp`],
+  ["Komenda","bash",R`gemini mcp add --transport http --scope user --timeout 30000 --trust prawo-pl __BASE__/api/mcp`],
   ["~/.gemini/settings.json","json",R`
 {
   "mcpServers": {
-    "prawo_pl": {
+    "prawo-pl": {
       "httpUrl": "__BASE__/api/mcp",
       "timeout": 30000,
       "trust": true
     }
   }
 }`],
-  ["Z kluczem API (tylko tryb zamknięty)","bash",R`gemini mcp add --transport http --header "Authorization: Bearer TWOJ_KLUCZ" prawo_pl __BASE__/api/mcp`]
+  ["Z kluczem API (tylko tryb zamknięty)","bash",R`gemini mcp add --transport http --header "Authorization: Bearer TWOJ_KLUCZ" prawo-pl __BASE__/api/mcp`]
  ],
- warns:["`trust: true` pomija potwierdzenia wywołań narzędzi – tu bezpieczne, bo narzędzia są tylko do odczytu, ale domyślnie jest `false`."],
+ warns:["`trust: true` pomija potwierdzenia wywołań narzędzi – tu bezpieczne, bo narzędzia są tylko do odczytu, ale domyślnie jest `false`.","**Dlaczego tu `prawo-pl`, a w Antigravity i Gemini API `prawo_pl`:** dokumentacja Gemini CLI wprost zabrania podkreślników w nazwach serwerów MCP (parser polityk dzieli nazwy narzędzi `mcp_serwer_narzedzie` na pierwszym podkreślniku, więc reguły i wildcardy mogłyby po cichu nie działać). W Antigravity i Interactions API Gemini obowiązują inne zasady (snake_case, bez myślnika)."],
  notes:["Dokumentacja nie opisuje pola `type`. Domyślny timeout 600000 ms.","Jeśli parser zgłasza błąd w JSON, sprawdź przecinki i brak komentarzy."],
  src:[["https://geminicli.com/docs/tools/mcp-server/"],["https://geminicli.com/docs/cli/tutorials/mcp-setup/"],["https://geminicli.com/docs/get-started/installation/"],["https://geminicli.com/docs/get-started/authentication/"],["https://developers.googleblog.com/en/an-important-update-transitioning-gemini-cli-to-antigravity-cli/"]]},
 
 {id:"gemini-api-mcp",g:"gemini",name:"Gemini API: zdalny MCP (Interactions API)",tag:"dla programistów; do przetestowania",conf:"part",
- why:"Składnia złożona z udokumentowanych pól, ale nieuruchomiona. Dwie strony dokumentacji Google są ze sobą sprzeczne co do modeli Gemini 3 (patrz uwaga). Odczyt tekstu odpowiedzi z obiektu interaction nie został zweryfikowany.",
+ why:"Składnia złożona z udokumentowanych pól (w tym odczyt `interaction.output_text`), ale nieuruchomiona na żywym API. Dwie strony dokumentacji Google są ze sobą sprzeczne co do modeli Gemini 3 (patrz uwaga), dlatego domyślny przykład używa modelu starszej generacji.",
  verified:"2026-10-11",plan:"klucz API z Google AI Studio",url:"mcp",
  intro:"Strona o function calling opisuje narzędzie typu `mcp_server` w Interactions API: pola `type`, `name`, `url`, `headers`, `allowed_tools`. Obsługiwane są tylko serwery Streamable HTTP (SSE nie).",
  steps:[
   "Pobierz klucz w Google AI Studio i ustaw `GEMINI_API_KEY`.",
   "`pip install google-genai`.",
-  "Wywołaj `client.interactions.create` z narzędziem `mcp_server` wskazującym na nasz adres. Nazwa serwera: snake_case, BEZ myślnika.",
-  "Jeśli dostaniesz błąd o braku wsparcia zdalnego MCP dla modelu Gemini 3, spróbuj starszego modelu z listy obsługiwanych w Interactions (np. `gemini-2.5-flash`) albo użyj wpisu „Gemini API: function calling”."
+  "Wywołaj `client.interactions.create` z narzędziem `mcp_server` wskazującym na nasz adres. Nazwa serwera: snake_case, BEZ myślnika (inaczej niż w Gemini CLI, gdzie obowiązuje `prawo-pl`).",
+  "Domyślny przykład używa `gemini-2.5-flash` (model, który strona Interactions wymienia jako wspierający zdalny MCP). Wariant z `gemini-3.8-flash` jest poniżej i może zwrócić błąd, dopóki Google nie zdejmie ograniczenia „Gemini 3 does not support remote MCP”. W razie kłopotów użyj wpisu „Gemini API: function calling”."
  ],
  snips:[["Python","python",R`
 from google import genai
@@ -680,7 +701,7 @@ from google import genai
 client = genai.Client()  # czyta GEMINI_API_KEY ze zmiennej środowiskowej
 
 interaction = client.interactions.create(
-    model="gemini-3.8-flash",   # nazwa z przykładów w dokumentacji – sprawdź aktualną
+    model="gemini-2.5-flash",   # model wymieniony w Interactions jako wspierający zdalny MCP – sprawdź aktualną listę
     input="Co mówi art. 118 Kodeksu cywilnego o przedawnieniu? Podaj datę stanu danych.",
     tools=[{
         "type": "mcp_server",
@@ -690,7 +711,16 @@ interaction = client.interactions.create(
         # "allowed_tools": ["search_law", "get_article", "get_act"],
     }],
 )
-print(interaction)  # struktura odpowiedzi – sprawdź w dokumentacji Interactions`,true]],
+print(interaction.output_text)`],
+ ["Wariant z modelem Gemini 3 (może zwrócić błąd o braku zdalnego MCP)","python",R`
+# Jak wyżej (to samo client = genai.Client()), ale z modelem Gemini 3.
+# Strona Interactions (Limitations) mówi, że Gemini 3 nie wspiera jeszcze zdalnego MCP.
+interaction = client.interactions.create(
+    model="gemini-3.8-flash",   # nazwa z przykładów w dokumentacji – sprawdź aktualną
+    input="Co mówi art. 118 Kodeksu cywilnego o przedawnieniu? Podaj datę stanu danych.",
+    tools=[{"type": "mcp_server", "name": "prawo_pl", "url": "__BASE__/api/mcp"}],
+)
+print(interaction.output_text)`,true]],
  warns:["**Sprzeczność w dokumentacji Google:** strona Interactions API w sekcji Limitations ma zdanie „Remote MCP: Gemini 3 does not support remote MCP, this is coming soon”, a przykład na stronie function calling używa modelu Gemini 3.x. Nie da się rozstrzygnąć, która jest aktualna – trzeba przetestować."],
  notes:["Serwer musi być publicznie osiągalny z infrastruktury Google."],
  src:[["https://ai.google.dev/gemini-api/docs/function-calling"],["https://ai.google.dev/gemini-api/docs/interactions"],["https://ai.google.dev/gemini-api/docs/changelog"]]},
@@ -743,11 +773,11 @@ print(response.text)`,true]],
  why:"Przykłady w README Google pokazują tylko serwer stdio. Połączenie Streamable HTTP + ClientSession z google-genai to kombinacja dwóch źródeł, niesprawdzona; nazwa funkcji klienta HTTP zależy od wersji pakietu mcp.",
  verified:"2026-10-11",plan:"klucz API z Google AI Studio",url:"mcp",
  intro:"Wbudowana obsługa MCP w SDK jest eksperymentalna: SDK przyjmuje lokalnie utworzoną sesję klienta MCP jako narzędzie. To KLIENT MCP działający u Ciebie w skrypcie, a nie bezpośrednie wsparcie API dla zdalnych serwerów.",
- steps:["`pip install google-genai mcp`.","Połącz się z serwerem klientem MCP po Streamable HTTP, wywołaj `session.initialize()` i przekaż `tools=[session]` w `GenerateContentConfig`.","Jeśli to nie działa – użyj wpisu „Gemini API: function calling”."],
+ steps:["`pip install google-genai \"mcp<2\"` (przypięcie wersji: w kliencie MCP v2 zmieniła się nazwa funkcji i jej parametry, a snippet jest napisany pod v1).","Połącz się z serwerem klientem MCP po Streamable HTTP, wywołaj `session.initialize()` i przekaż `tools=[session]` w `GenerateContentConfig`.","Jeśli to nie działa – użyj wpisu „Gemini API: function calling”."],
  snips:[["Python","python",R`
 import asyncio
 from mcp import ClientSession
-from mcp.client.streamable_http import streamablehttp_client  # w nowszych wersjach: streamable_http_client
+from mcp.client.streamable_http import streamablehttp_client  # pakiet mcp 1.x (pip install "mcp<2")
 from google import genai
 from google.genai import types
 
@@ -765,7 +795,7 @@ async def main():
             print(response.text)
 
 asyncio.run(main())`,true]],
- warns:["W najnowszej dokumentacji klienta MCP dla Pythona `streamable_http_client` nie przyjmuje już `headers=` ani `timeout=` – dostosuj do swojej wersji pakietu."],
+ warns:["Snippet wymaga pakietu `mcp` w wersji 1.x. W dokumentacji klienta MCP v2 działa tylko `streamable_http_client`, bez parametrów `headers=`/`timeout=` (nagłówki ustawia się na przekazanym `http_client`) – przy v2 dostosuj import i wywołanie."],
  notes:[],
  src:[["https://github.com/googleapis/python-genai"],["https://github.com/googleapis/js-genai"],["https://py.sdk.modelcontextprotocol.io/client/transports/"]]},
 
@@ -860,17 +890,16 @@ Name:            prawo_pl
 Authentication:  No authentication
 allowedEgressFqdns: (sama nazwa domeny z adresu wyżej)`]],
  warns:[],
- notes:["Nie można podłączyć istniejącego data store – trzeba utworzyć nowy.","Narzędzia z adnotacją `readOnlyHint` mogą pomijać potwierdzenie użytkownika; nasze narzędzia są tylko do odczytu (wniosek z dokumentacji, nie sprawdzony w kodzie serwera)."],
+ notes:["Nie można podłączyć istniejącego data store – trzeba utworzyć nowy.","Narzędzia z adnotacją `readOnlyHint` mogą pomijać potwierdzenie użytkownika; nasze narzędzia mają tę adnotację (`readOnlyHint: true` w `tools/list`, sprawdzone testem jednostkowym; nie testowano na wdrożeniu)."],
  src:[["https://support.google.com/g/answer/17106276?hl=en"],["https://docs.cloud.google.com/gemini/enterprise/docs/connectors/custom-mcp-server/set-up-custom-mcp-server"]]},
 
 /* ============================ OPENAI ============================ */
-{id:"chatgpt-plugin",g:"openai",name:"ChatGPT: wtyczka z własnym serwerem MCP",tag:"zalecana dla ChatGPT",conf:"part",
- why:"Oficjalna strona OpenAI potwierdza protokoły (SSE, streaming HTTP) i tryb „No authentication”, ale NIE podaje wymaganych planów ani aktualnych etykiet menu. Plany (Plus, Pro, Business, Enterprise, Edu) pochodzą ze źródeł zewnętrznych; jedno niepotwierdzone źródło twierdzi, że przełącznik Developer mode usunięto około 5.10.2026.",
- verified:"2026-10-11",plan:"tylko wersja webowa (nie mobile, nie Advanced Voice); zasady workspace i Lockdown mogą blokować własne serwery",url:"mcp",
+{id:"chatgpt-plugin",g:"openai",name:"ChatGPT: wtyczka z własnym serwerem MCP",tag:"zalecana dla ChatGPT",conf:"ok",
+ verified:"2026-10-11",plan:"tylko wersja webowa (nie mobile, nie Advanced Voice); zasady workspace i Lockdown mogą blokować własne serwery. Niepotwierdzone w oficjalnej dokumentacji: lista planów ChatGPT z dostępem do własnych serwerów (źródła zewnętrzne: Plus, Pro, Business, Enterprise, Edu)",url:"mcp",
  intro:"W lipcu 2026 „apps” przemianowano w ChatGPT na „plugins”. Własny serwer MCP dodajesz jako wtyczkę.",
  steps:[
   "Upewnij się, że serwer jest publiczny pod HTTPS (adres z ramki powyżej).",
-  "Wejdź na chatgpt.com/plugins (ChatGPT w przeglądarce). Starsze poradniki: Settings → Apps → Advanced settings → Developer mode.",
+  "Wejdź na chatgpt.com/plugins (ChatGPT w przeglądarce). Starsze poradniki opisują ścieżkę Settings → Apps → Advanced settings → Developer mode; jeśli jej nie widzisz, użyj chatgpt.com/plugins.",
   "Kliknij plus (ikona „+”, bywa trudna do znalezienia), następnie **Add custom MCP server**.",
   "Wpisz nazwę (np. `Prawo PL`) i opis – opis pomaga modelowi wybrać narzędzie.",
   "W sekcji Connection wpisz **Server URL** (adres z ramki powyżej). Opcja „Tunnel” dotyczy serwerów prywatnych – nie jest potrzebna.",
@@ -886,7 +915,7 @@ Server URL: __BASE__/api/mcp
 Authentication: No authentication`],
  ["Przykładowy prompt","text",R`
 @Prawo PL Użyj narzędzia search_law i znajdź przepisy o wypowiedzeniu umowy o pracę; potem get_article dla wskazanego artykułu. Podaj stan danych.`]],
- warns:["**Klucz API:** UI oferuje tylko OAuth / No authentication / tryb mieszany – NIE ma pola na nagłówek Bearer ani `x-api-key`. Jeśli kiedyś włączysz `API_KEY`, ta wtyczka przestanie działać; zostaw serwer publiczny.","Bez adnotacji `readOnlyHint` przy narzędziach ChatGPT traktuje je jako zapisujące i może prosić o potwierdzenie każdego wywołania."],
+ warns:["**Klucz API:** UI oferuje tylko OAuth / No authentication / tryb mieszany – NIE ma pola na nagłówek Bearer ani `x-api-key`. Jeśli kiedyś włączysz `API_KEY`, ta wtyczka przestanie działać; zostaw serwer publiczny.","Nasz serwer oznacza wszystkie trzy narzędzia adnotacją `readOnlyHint: true`, więc ChatGPT nie powinien prosić o potwierdzenie każdego wywołania. Jeśli mimo to prosi, a wdrożenie jest starsze niż ta zmiana, zaktualizuj je i kliknij **Refresh** w ustawieniach wtyczki."],
  notes:["Narzędzia `search`/`fetch` nie są wymagane dla zwykłych własnych serwerów (wymagają ich tylko deep research i company knowledge).","Na planach Workspace administrator musi dopuścić własne serwery (według źródeł zewnętrznych: Workspace Settings → Permissions & Roles → Connected Data)."],
  src:[["https://developers.openai.com/api/docs/guides/custom-mcp-server"],["https://developers.openai.com/api/docs/mcp"],["https://developers.openai.com/apps-sdk/deploy/connect-chatgpt"],["https://til.simonwillison.net/llms/mcp-in-claude-and-chatgpt","Źródło pomocnicze: notatki S. Willisona"]]},
 
@@ -955,11 +984,10 @@ print(resp.output_text)`]],
  notes:["Limity: tier Build 1000 RPM, Launch/Grow 2000 RPM.","Zgodne z Zero Data Retention. Zapytania użytkownika trafiają do naszego serwera.","`connector_id` jest wycofywany dla modeli po 1.09.2026 – nas nie dotyczy."],
  src:[["https://developers.openai.com/api/docs/guides/tools-connectors-mcp"],["https://developers.openai.com/api/reference/resources/responses/methods/create"],["https://developers.openai.com/api/docs/guides/function-calling"]]},
 
-{id:"openai-agents",g:"openai",name:"OpenAI Agents SDK (Python / TypeScript)",tag:"hostowany MCP lub lokalny klient",conf:"part",
- why:"Konfigurację odczytano z dokumentacji SDK, ale nazwy pakietów pochodzą z pamięci, a dokładny kontrakt konstruktora w Pythonie nie został w całości potwierdzony.",
+{id:"openai-agents",g:"openai",name:"OpenAI Agents SDK (Python / TypeScript)",tag:"hostowany MCP lub lokalny klient",conf:"ok",
  verified:"2026-10-11",plan:"klucz API OpenAI",url:"mcp",
  intro:"Dwa tryby: hostowany (OpenAI łączy się z serwerem – wymaga publicznego URL) i lokalny (`MCPServerStreamableHttp` – Twój proces łączy się bezpośrednio).",
- steps:["Instalacja: `pip install openai-agents` (Python) lub `npm install @openai/agents` (TypeScript) – nazwy z pamięci.","Wybierz tryb i skopiuj snippet.","Filtr narzędzi w trybie lokalnym (Python): `tool_filter=create_static_tool_filter(allowed_tool_names=[…])`."],
+ steps:["Instalacja: `pip install openai-agents` (Python) lub `npm install @openai/agents` (TypeScript).","Wybierz tryb i skopiuj snippet.","Filtr narzędzi w trybie lokalnym (Python): `tool_filter=create_static_tool_filter(allowed_tool_names=[…])`."],
  snips:[["Python, tryb lokalny","python",R`
 import asyncio
 from agents import Agent, Runner
@@ -979,8 +1007,8 @@ async def main():
         r = await Runner.run(agent, "Co mówi art. 8 Kodeksu pracy?")
         print(r.final_output)
 
-asyncio.run(main())`,true],
- ["TypeScript, tryb hostowany","ts",R`
+asyncio.run(main())`],
+ ["TypeScript, tryb hostowany (sygnatura niesprawdzona)","ts",R`
 import { Agent, run, hostedMcpTool } from '@openai/agents';
 
 const agent = new Agent({
@@ -994,8 +1022,8 @@ const agent = new Agent({
   })],
 });
 const res = await run(agent, 'Znajdź przepisy o urlopie wypoczynkowym.');
-console.log(res.finalOutput);`]],
- warns:[],notes:["`cache_tools_list=True` tylko gdy lista narzędzi rzadko się zmienia (`invalidate_tools_cache()` wymusza odświeżenie).","W trybie lokalnym połączenie musi być otwarte i zamknięte (context manager / `connect`-`close`).","W Pythonie `allowed_tools` dla `HostedMCPTool` nie jest udokumentowane na przeczytanej stronie."],
+console.log(res.finalOutput);`,true]],
+ warns:[],notes:["Wariant Python (import `MCPServerStreamableHttp`, `params` z `url`/`headers`/`timeout`, `cache_tools_list`) zgadza się z dokumentacją Agents SDK. Sygnatura `hostedMcpTool` w TypeScript nie została sprawdzona.","`cache_tools_list=True` tylko gdy lista narzędzi rzadko się zmienia (`invalidate_tools_cache()` wymusza odświeżenie).","W trybie lokalnym połączenie musi być otwarte i zamknięte (context manager / `connect`-`close`).","W Pythonie `allowed_tools` dla `HostedMCPTool` nie jest udokumentowane na przeczytanej stronie."],
  src:[["https://openai.github.io/openai-agents-python/mcp/"],["https://openai.github.io/openai-agents-js/guides/mcp/"]]},
 
 {id:"codex-cli",g:"openai",name:"OpenAI Codex CLI",tag:"config.toml",conf:"ok",verified:"2026-10-11",
@@ -1005,7 +1033,7 @@ console.log(res.finalOutput);`]],
   "Otwórz lub utwórz `~/.codex/config.toml` (Windows prawdopodobnie `%USERPROFILE%\\.codex\\config.toml` – wniosek, nie z dokumentacji). Projektowo: `.codex/config.toml` (tylko zaufane projekty).",
   "Dodaj tabelę `[mcp_servers.prawo_pl]` z kluczem `url`.",
   "Weryfikacja: `codex mcp list`; w TUI `/mcp` pokazuje aktywne serwery.",
-  "Polecenie `codex mcp add` jest udokumentowane głównie dla stdio; dla HTTP pewniejsza jest edycja `config.toml` (sprawdź `codex mcp add --help`).",
+  "Szybciej: `codex mcp add prawo_pl --url __BASE__/api/mcp` (forma z adresem pokazana w dokumentacji Codex) albo edycja `config.toml` ze snippetu.",
   "Do `AGENTS.md` projektu dopisz regułę: korzystaj z serwera prawo_pl i zawsze podawaj stan danych."
  ],
  snips:[["~/.codex/config.toml","toml",R`
@@ -1016,9 +1044,10 @@ default_tools_approval_mode = "auto"
 startup_timeout_sec = 20
 tool_timeout_sec = 60
 
-# Tylko gdy na serwerze włączono API_KEY:
+# Tylko gdy na serwerze włączono API_KEY (klucz zostaje w zmiennej środowiskowej, nie w pliku):
 # bearer_token_env_var = "PRAWO_API_KEY"
-# albo: http_headers = { "x-api-key" = "TWOJ_KLUCZ" }`]],
+# albo: env_http_headers = { "x-api-key" = "PRAWO_API_KEY" }`],
+ ["Komenda (bez edycji pliku)","bash",R`codex mcp add prawo_pl --url __BASE__/api/mcp`]],
  warns:[],notes:["`startup_timeout_sec` domyślnie 10, `tool_timeout_sec` domyślnie 60; `required = true` powoduje błąd startu, gdy serwer się nie zainicjuje.","Nie sprawdzono podkomend `get`/`remove`/`logout`."],
  src:[["https://learn.chatgpt.com/docs/extend/mcp?surface=cli","Dokumentacja Codex (przekierowanie z developers.openai.com/codex/mcp)"]]},
 
@@ -1051,9 +1080,8 @@ tool_timeout_sec = 60
  warns:[],notes:["Na koncie zespołowym domena może wymagać zatwierdzenia w MCP Allowlist (Team Settings).","Dokumentacja Cursora nie opisuje ścieżki Settings do dodania serwera; zarządzanie włączaniem jest w sekcji Customize."],
  src:[["https://cursor.com/docs/context/mcp"]]},
 
-{id:"vscode",g:"edytory",name:"VS Code / GitHub Copilot (tryb Agent)",tag:".vscode/mcp.json",conf:"part",
- why:"Format pliku jest udokumentowany, ale NIE potwierdzono minimalnej wersji VS Code, wymaganego planu Copilot ani nazwy polityki organizacyjnej „MCP servers in Copilot”.",
- verified:"2026-10-11",plan:"niepotwierdzony; polityki organizacji Copilot Business/Enterprise mogą blokować MCP",url:"mcp",
+{id:"vscode",g:"edytory",name:"VS Code / GitHub Copilot (tryb Agent)",tag:".vscode/mcp.json",conf:"ok",
+ verified:"2026-10-11",plan:"niepotwierdzone: minimalna wersja VS Code, wymagany plan Copilot i nazwa polityki organizacyjnej „MCP servers in Copilot”; polityki organizacji Copilot Business/Enterprise mogą blokować MCP",url:"mcp",
  intro:"Uwaga na format: główny klucz to `servers` (nie `mcpServers`) i trzeba podać `type: \"http\"`. VS Code próbuje HTTP, a przy braku wsparcia schodzi do SSE.",
  steps:[
   "Otwórz paletę poleceń i uruchom **MCP: Add Server** (kreator), albo ręcznie utwórz `.vscode/mcp.json` w projekcie (dobre do współdzielenia w repozytorium), albo **MCP: Open User Configuration** dla konfiguracji globalnej.",
@@ -1139,7 +1167,7 @@ tool_timeout_sec = 60
     }
   }
 }`]],
- warns:["Bez nagłówka Authorization Zed może uruchomić standardowy przepływ OAuth MCP. Nasz serwer go nie ma – jeśli Zed wymusi logowanie, dodaj dowolny nagłówek albo włącz klucz API i podaj Authorization."],
+ warns:["Bez nagłówka Authorization Zed może uruchomić standardowy przepływ OAuth MCP. Nasz serwer odpowiada 200 bez żądania logowania (nie zwraca 401), więc OAuth nie powinien się włączyć. Jeśli Zed mimo to zażąda logowania OAuth, zgłoś to; obejście nie jest udokumentowane."],
  notes:["Uprawnienia narzędzi: `agent.tool_permissions.default` (domyślnie „confirm”); klucz pojedynczego narzędzia ma format `mcp:prawo-pl:search_law`."],
  src:[["https://zed.dev/docs/ai/mcp"]]},
 
@@ -1213,23 +1241,22 @@ Transport:       Streamable HTTP`],["Agent API (dla programistów, narzędzie na
  warns:[],notes:["Na kontach Enterprise admin musi włączyć „Allow members to add custom connectors” (domyślnie wyłączone).","Aplikacje mobilne mogą pokazywać tylko gotowe konektory – dodaj na webie."],
  src:[["https://docs.perplexity.ai/docs/agent-api/tools/mcp"],["https://docs.perplexity.ai/docs/agent-api/tools/connectors"],["https://www.conductor.com/docs/mcp/perplexity/","Źródło zewnętrzne (pomocniczo)"]]},
 
-{id:"mistral",g:"inne",name:"Mistral Le Chat (Custom MCP Connector)",tag:"Connectors",conf:"part",
- why:"Odczytana strona dokumentacji opisuje produkt „Work”, a nie wprost Le Chat – nazwy menu mogą się różnić; zewnętrzne instrukcje podają inną ścieżkę (Intelligence → Connectors). help.mistral.ai zwrócił błąd.",
+{id:"mistral",g:"inne",name:"Mistral Le Chat (Custom MCP Connector)",tag:"Connectors",conf:"ok",
  verified:"2026-10-11",plan:"funkcja tylko dla administratora; na planach Free, Pro i Student właściciel konta jest domyślnie administratorem",url:"mcp",
  intro:"Dokumentacja Mistral opisuje automatyczne wykrywanie uwierzytelniania; wśród opcji jest „No authentication” dla publicznych lub zaufanych serwerów.",
  steps:[
   "W Le Chat otwórz stronę Connectors (wg zewnętrznych instrukcji: menu Intelligence → Connectors) – potrzebujesz roli administratora.",
   "Kliknij **+ Add Connector** i przełącz na kartę **Custom MCP Connector**.",
-  "Wypełnij: Connector name (unikalna nazwa bez spacji i znaków specjalnych), Server URL (adres z ramki powyżej), opcjonalnie Description.",
+  "Wypełnij: Connector name (unikalny identyfikator bez spacji i znaków specjalnych – dlatego `prawopl`, bez podkreślnika), Server URL (adres z ramki powyżej), opcjonalnie Description.",
   "Kliknij **Connect**. Platforma wykryje brak uwierzytelniania; przy włączonym kluczu wybierz Bearer / API token.",
   "W nowej rozmowie włącz konektor w narzędziach i przetestuj pytaniem o konkretny artykuł."
  ],
  snips:[["Pola formularza","text",R`
-Connector name:  prawo_pl
+Connector name:  prawopl
 Server URL:      __BASE__/api/mcp
 Description:     Polskie prawo: search_law, get_article, get_act (odpowiedzi zawierają data_as_of)`]],
- warns:["Mistral ostrzega, że konektory MCP nie są jego produktami, a odpowiedzialność za zaufanie serwerowi spoczywa na użytkowniku. Zatwierdzaj wywołania ręcznie, „Always allow” dopiero po teście."],
- notes:["Własne konektory nie wspierają jeszcze dynamic tool discovery, zasobów ani szablonów promptów (tylko narzędzia – nam wystarcza).","Serwer bez uwierzytelniania powinien odpowiedzieć 200 na pierwsze żądanie (streszczenie wyszukiwania)."],
+ warns:["Nazwa konektora to `prawopl` (same litery), bo dokumentacja Mistral wymaga identyfikatora bez spacji i znaków specjalnych, a podkreślnik mógłby zostać odrzucony.","Mistral ostrzega, że konektory MCP nie są jego produktami, a odpowiedzialność za zaufanie serwerowi spoczywa na użytkowniku. Zatwierdzaj wywołania ręcznie, „Always allow” dopiero po teście."],
+ notes:["Niepotwierdzone: odczytana strona dokumentacji opisuje produkt „Work”, a nie wprost Le Chat, więc nazwy menu mogą się różnić (zewnętrzne instrukcje podają ścieżkę Intelligence → Connectors).","Własne konektory nie wspierają jeszcze dynamic tool discovery, zasobów ani szablonów promptów (tylko narzędzia – nam wystarcza).","Serwer bez uwierzytelniania powinien odpowiedzieć 200 na pierwsze żądanie (streszczenie wyszukiwania)."],
  src:[["https://docs.mistral.ai/le-chat/knowledge-integrations/connectors/mcp-connectors"],["https://docs.cloud.cdata.com/en/Clients/Mistral-Client","Źródło zewnętrzne (pomocniczo)"]]},
 
 {id:"copilot-studio",g:"inne",name:"Microsoft Copilot Studio",tag:"kreator MCP",conf:"ok",verified:"2026-10-11",
@@ -1347,10 +1374,16 @@ curl -s __BASE__/api/mcp \
   -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`]
  ],
- warns:["Limity: ok. 60 żądań/min/IP dla wyszukiwania i 120 dla pozostałych; po przekroczeniu HTTP 429 z `Retry-After`. Każda odpowiedź zawiera `data_as_of` (REST także nagłówek `X-Data-As-Of`)."],
+ warns:["Limity: ok. 60 żądań/min/IP dla wyszukiwania i 120 dla pozostałych punktów REST oraz 600 dla MCP (domyślnie); po przekroczeniu HTTP 429 z `Retry-After`. Każda odpowiedź zawiera `data_as_of` (REST także nagłówek `X-Data-As-Of`)."],
  notes:["Identyfikatory: `eli` = `DU/1964/93`; `doc_id` = eli albo `eli#U` (tekst ujednolicony; w adresach `#` jako `%23`, albo parametr `variant=U`)."],
  src:[]}
 ];
+
+/* Ostrzeżenie o wspólnym IP dostawcy (limit żądań liczony po IP) – dopisywane do wpisów, w których ruch idzie z chmury dostawcy. */
+var SHARED_IP_WARN="**Błąd 429 mimo poprawnej konfiguracji?** Ten konektor łączy się z chmury dostawcy, a limit żądań liczymy po adresie IP. Wielu użytkowników dzieli te same adresy (Anthropic: wspólny zakres `160.79.104.0/21`), więc limit bywa wyczerpany przez innych. Odczekaj `Retry-After` i spróbuj ponownie; właściciel wdrożenia może podnieść `MCP_RATE_LIMIT`. Nie testowano na wdrożeniu.";
+["claude-web","claude-team","claude-api","chatgpt-plugin","openai-responses","gemini-app","gemini-enterprise","gemini-api-mcp"].forEach(function(id){
+  var c=byId(id);if(c){c.warns=(c.warns||[]).concat([SHARED_IP_WARN]);}
+});
 
 var QUICK=[
   {t:"Rozmawiam z Claude w przeglądarce lub aplikacji",d:"Najprostsze: konektor, bez klucza i bez kodu.",go:"claude-web"},
@@ -1365,7 +1398,7 @@ var TROUBLE=[
  ["claude.ai: „Couldn't reach the MCP server”","Adres musi być publiczny, HTTPS i kończyć się na `/api/mcp` (nie sama domena, nie `/sse`). Połączenie idzie z chmury Anthropic, nie z Twojego komputera, więc `localhost` nie zadziała. Sprawdź, czy wdrożenie nie jest chronione logowaniem Vercel (Deployment Protection – dotyczy zwykle adresów podglądu; użyj domeny produkcyjnej) i czy firewall nie blokuje zakresu `160.79.104.0/21`."],
  ["Otwieram /api/mcp w przeglądarce i widzę błąd 405","To normalne: serwer MCP przyjmuje tylko POST (Streamable HTTP). Do sprawdzenia użyj przycisku testu na tej stronie lub komendy curl z wpisu „Dowolny model”."],
  ["401 Unauthorized","Właściciel włączył tryb zamknięty (`API_KEY`). Podaj klucz: nagłówek `Authorization: Bearer KLUCZ` albo `x-api-key`. Uwaga: ChatGPT (wtyczka), aplikacja Gemini i część formularzy nie pozwalają ustawić nagłówka – wtedy API musi pozostać otwarte. Odpowiedź HTML zamiast JSON przy 401 oznacza zwykle ochronę wdrożenia Vercel, nie nasz klucz."],
- ["429 Too Many Requests","Przekroczono limit żądań (ok. 60/min/IP dla wyszukiwania, 120 dla pozostałych). Poczekaj tyle sekund, ile wskazuje nagłówek `Retry-After`. Limit liczony jest per instancja funkcji, więc bywa nierówny."],
+ ["429 Too Many Requests","Przekroczono limit żądań (ok. 60/min/IP dla wyszukiwania, 120 dla pozostałych punktów REST, 600 dla MCP). Poczekaj tyle sekund, ile wskazuje nagłówek `Retry-After`. Limit liczony jest per instancja funkcji, więc bywa nierówny. **Uwaga na wspólne IP:** konektory claude.ai, ChatGPT i Gemini wywołują serwer z chmury dostawcy (Anthropic używa wspólnego zakresu `160.79.104.0/21` dla wszystkich użytkowników), więc wielu użytkowników dzieli kilka adresów i może wzajemnie wyczerpywać limit. Wtedy 429 pojawia się mimo poprawnej konfiguracji: odczekaj `Retry-After`, a właściciel wdrożenia niech podniesie `MCP_RATE_LIMIT` i oprze ochronę na Vercel Firewall. Nie testowano na wdrożeniu."],
  ["Timeout lub bardzo wolna pierwsza odpowiedź","Zimny start funkcji serverless – ponów po kilku sekundach. Jeśli powtarza się, sprawdź `/api/health` (pole `db`)."],
  ["`/api/health` zwraca 503 lub db=false","Usługa działa, ale baza danych jest niedostępna (zmienna `DATABASE_URL`, limity Neon, uśpiona baza). To problem wdrożenia, nie klienta AI."],
  ["Klient nie widzi narzędzi albo widzi stare","claude.ai: dodaj połączenie od nowa. ChatGPT: w ustawieniach wtyczki kliknij Refresh i zacznij nową rozmowę. Claude Code: `/mcp` → reconnect. Gemini CLI/Antigravity: `/mcp` i przeładowanie konfiguracji. Zmiany ustawień uwierzytelniania w claude.ai wymagają usunięcia i ponownego dodania konektora."],
@@ -1374,7 +1407,7 @@ var TROUBLE=[
  ["Antigravity nie widzi serwera","Użyj klucza `serverUrl` (nie `url` ani `httpUrl`) i nazwy bez myślnika. Plik globalny: `~/.gemini/config/mcp_config.json`. Sprawdź `/mcp`."],
  ["Gemini API: „remote MCP not supported”","Dokumentacja Google jest niespójna co do modeli Gemini 3. Spróbuj starszego modelu z listy obsługiwanych w Interactions albo function calling z REST (wpis „Gemini API: function calling z REST”)."],
  ["ChatGPT: błąd schematu „servers” (Custom GPT)","W `/openapi.json` pole `servers` jest względne (`/`). Wklej treść schematu zamiast importu z URL i ustaw tam bezwzględny adres wdrożenia. Dla nowych wdrożeń lepsza jest wtyczka MCP."],
- ["ChatGPT ciągle prosi o potwierdzenie wywołań","Bez adnotacji `readOnlyHint` przy narzędziach serwera ChatGPT traktuje je jako zapisujące. To kwestia konfiguracji serwera MCP, nie Twojego konta."],
+ ["ChatGPT ciągle prosi o potwierdzenie wywołań","Aktualna wersja serwera zwraca w `tools/list` adnotację `readOnlyHint: true` (plus `destructiveHint: false`) dla wszystkich narzędzi, dzięki czemu ChatGPT nie traktuje ich jako zapisujących. Jeśli pytania o zgodę wracają, Twoje wdrożenie jest prawdopodobnie starsze: zaktualizuj je (redeploy), w ustawieniach wtyczki kliknij **Refresh** i zacznij nową rozmowę. Sprawdzisz to poleceniem curl z wpisu „Dowolny model” (pole `annotations` w odpowiedzi na `tools/list`)."],
  ["Model nie podaje „Stanu danych na dzień …”","Wklej prompt z sekcji „Prompt do wklejenia” jako instrukcje systemowe lub projektu. Model powinien brać datę z pola `data_as_of` odpowiedzi narzędzia."],
  ["Model cytuje nieistniejący artykuł lub stare brzmienie","Poproś o weryfikację przez `get_article` i podanie `source_url`. Brak wyniku wyszukiwania nie oznacza braku przepisu. Artykuły oznaczone „(uchylony)” nie obowiązują. Aktualne brzmienie zawsze sprawdź w ISAP."],
  ["Instrukcja nie zgadza się z tym, co widzę na ekranie","Interfejsy zmieniają się co kilka tygodni. Szukaj nazw opcji (np. Connectors, Add custom connector, No sign in) i sprawdź datę weryfikacji oraz link do dokumentacji przy wpisie. Właściciel repozytorium może poprosić Claude Code: „Uaktualnij to wszystko”."]
@@ -1405,6 +1438,7 @@ function renderGroups(){
     var b=mk("button",null);b.type="button";b.setAttribute("role","tab");b.id="tab-"+g.id;
     b.setAttribute("aria-selected",state.group===g.id?"true":"false");
     b.tabIndex=state.group===g.id||(!state.group&&i===0)?0:-1;
+    b.setAttribute("aria-controls","client-panel");
     b.appendChild(document.createTextNode(g.name));b.appendChild(mk("small",null,g.sub));
     b.addEventListener("click",function(){selectGroup(g.id);});
     b.addEventListener("keydown",function(e){
@@ -1433,9 +1467,10 @@ function renderList(){
 var booting=true;
 function setHash(h){if(booting)return;try{history.replaceState(null,"",location.pathname+location.search+h);}catch(e){}}
 function selectGroup(gid){
-  state.group=gid;state.client=null;detailEl.textContent="";
+  /* otwarta instrukcja zostaje widoczna przy przechodzeniu między kartami grup (np. strzałkami) */
+  state.group=gid;
   renderGroups();renderList();
-  setHash("#kreator");
+  if(!state.client)setHash("#kreator");
 }
 
 function selectClient(id,focus){
@@ -1652,6 +1687,10 @@ function runTest(){
   var key=$("key-in").value.trim();
   var failed=0,warned=0;
   var asof=null;
+  if(key&&/^http:\/\//i.test(BASE)&&!isLocalHost(BASE)){
+    addLine("wn","Klucz API zostanie wysłany bez szyfrowania","Adres zaczyna się od http://, a nie https://. Nie wysyłaj klucza przez http poza siecią lokalną – użyj adresu https://.");
+    warned++;
+  }
 
   function step1(){
     var li=addLine("run","Stan danych: pobieranie /data-info.json");
@@ -1659,7 +1698,7 @@ function runTest(){
       var j=r.ok?parseJson(r.text):null;
       if(j&&j.data_as_of){asof=j.data_as_of;setLine(li,"ok","Stan danych na dzień "+pl(j.data_as_of),(j.dz_u&&j.dz_u.latest_act?"Najnowszy Dz.U.: "+j.dz_u.latest_act+(j.m_p&&j.m_p.latest_act?"; M.P.: "+j.m_p.latest_act:""):""));}
       else{warned++;setLine(li,"wn","Nie udało się odczytać /data-info.json",statusMsg(r));}
-    },function(e){warned++;setLine(li,"wn","Nie udało się pobrać /data-info.json",netMsg(e));});
+    },function(e){warned++;setLine(li,"wn","Nie udało się pobrać /data-info.json",netMsg(e)+" Ten krok może się nie powieść także wtedy, gdy adres w polu różni się od domeny, z której otwarto tę stronę (albo strona jest otwarta z pliku) – blokuje to przeglądarka (CORS), a serwer może działać poprawnie. Decydują kolejne kroki testu.");});
   }
   function step2(){
     var li=addLine("run","Zdrowie usługi: GET /api/health");

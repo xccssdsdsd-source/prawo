@@ -4,7 +4,7 @@ Efekt: własne API prawa polskiego w internecie (Vercel + baza Neon), do któreg
 
 ## 0. Potrzebujesz
 - Konta (darmowe): Neon (neon.tech), Vercel (vercel.com).
-- Zainstalowane: Python 3.10+, Node.js 20+, Git (opcjonalnie).
+- Zainstalowane: Python 3.10+, Node.js (lokalnie do testów wystarczy 20+; wdrożenie na Vercel wymaga Node 24.x, ustawionego w `vercel/package.json`), Git (opcjonalnie).
 - Folder projektu `prawo` z pobranymi danymi w `dane\`.
 
 ## 1. Baza Neon
@@ -15,7 +15,7 @@ Efekt: własne API prawa polskiego w internecie (Vercel + baza Neon), do któreg
 ## 2. Przygotowanie danych (pipeline)
 W PowerShell, w folderze projektu:
 ```powershell
-cd C:\Users\kajet\Documents\prawo
+cd <folder-projektu>        # np. cd $HOME\Documents\prawo
 pip install -r pipeline\requirements.txt
 python pipeline\export_chunks.py
 ```
@@ -33,11 +33,7 @@ python pipeline\load_to_postgres.py --schema --max-mb 450
 - Ładowanie idzie w kolejności ważności: najpierw kategorie `ujednolicone`, `jednolite`, potem pozostałe. Sprawdź `python pipeline\load_to_postgres.py --help` dla opcji (np. wybór kategorii).
 - Można je przerwać i uruchomić ponownie.
 
-Po każdym odświeżeniu danych uruchom też:
-```powershell
-python pipeline\build_data_info.py
-```
-Aktualizuje `vercel\public\data-info.json` (pole `data_as_of`, najnowsze akty). Następnie wdróż ponownie (`vercel --prod`), inaczej API poda nieaktualną datę stanu danych.
+Po załadowaniu (i po każdym odświeżeniu danych) trzeba też zaktualizować datę stanu danych: `python pipeline\build_data_info.py` odświeża `vercel\public\data-info.json` (pole `data_as_of`, najnowsze akty) i daty w `index.html` oraz `podlacz.html`; potem wdrożenie (`vercel --prod`), inaczej API poda nieaktualną datę. **Przy późniejszych aktualizacjach robi to za Ciebie `python aktualizuj.py`** (sekcja „Aktualizacja danych po wdrożeniu” niżej).
 
 ## 4. Klucz API (opcjonalny)
 API jest domyślnie **publiczne i otwarte** – nie musisz ustawiać żadnego klucza. Tryb zamknięty włącza się tylko wtedy, gdy ustawisz zmienną `API_KEY`; wtedy zapytania bez klucza dostają 401. Aby go użyć, wygeneruj losowy klucz (PowerShell):
@@ -68,20 +64,46 @@ curl "https://TWOJA-DOMENA.vercel.app/api/article?id=DU/1964/93&art=446"
 Tryb otwarty: zapytania bez klucza działają. Tryb zamknięty (ustawiony `API_KEY`): dodaj `-H "Authorization: Bearer KLUCZ"`; bez klucza `/api/search` zwraca 401.
 
 ## 6a. Publikacja kodu na GitHub
-Repozytorium lokalne jest już zainicjowane (gałąź `main`, pierwszy commit). Wypchnięcie robisz Ty:
-1. Na github.com utwórz **puste** publiczne repozytorium (bez README/licencji), np. `prawo-pl`.
-2. Sprawdź, że nic wrażliwego nie jest śledzone: `git ls-files | findstr /i "dane\ .env out\"` nie powinno nic zwrócić.
-3. W katalogu projektu:
+Repozytorium już istnieje: lokalna gałąź `main` jest powiązana z `origin` (sprawdź `git remote -v`; obecnie `https://github.com/xccssdsdsd-source/prawo.git`). Wypchnięcie robisz Ty (albo Claude za Twoją zgodą):
+1. Sprawdź, że nic wrażliwego nie jest śledzone. Pierwsza komenda powinna nic nie wypisać, druga może pokazać tylko wzory `.env.example` (celowo śledzone, bez haseł):
 ```powershell
-git remote add origin https://github.com/TWOJ-LOGIN-GITHUB/prawo-pl.git
-git push -u origin main
+git ls-files dane pipeline/out stan
+git ls-files | findstr /i /r "\.sqlite \.jsonl$ \.env"
 ```
-(`TWOJ-LOGIN-GITHUB` to placeholder.) Katalog `dane\` i plik `pipeline\out\chunks.jsonl` (ok. 956 MB, ponad limit 100 MB GitHub) są w `.gitignore` i nie powinny trafić do repozytorium. Opcjonalnie podłącz repozytorium do Vercel (Import Project, Root Directory: `vercel`) dla wdrożeń po każdym pushu.
+2. Zobacz, co wyjdzie: `git log @{u}..HEAD --oneline`. **`git push` wypycha wszystkie lokalne, niewypchnięte commity z gałęzi, nie tylko ostatni**, więc przejrzyj tę listę przed pushem.
+3. `git pull --rebase` (dzienna aktualizacja z GitHub Actions, sekcja 8a, sama commituje `data-info.json`), potem `git push`.
+
+Gdybyś zakładał repozytorium od zera: utwórz na github.com **puste** repozytorium (bez README/licencji), `git remote add origin https://github.com/<TWOJ-LOGIN>/<nazwa>.git`, `git push -u origin main` i podmień adres repozytorium w `README.md` oraz `vercel/public/index.html`.
+
+Katalog `dane\` i plik `pipeline\out\chunks.jsonl` (ok. 956 MB, ponad limit 100 MB GitHub) są w `.gitignore` i nie mogą trafić do repozytorium. Opcjonalnie podłącz repozytorium do Vercel (Import Project, Root Directory: `vercel`) dla wdrożeń po każdym pushu.
+
+Prywatność: metadane commitów zawierają adres e-mail autora (`git log -1 --format=%ae`) i po upublicznieniu repozytorium będą widoczne. Jeśli nie chcesz go ujawniać, ustaw przed kolejnymi commitami adres noreply z GitHuba: `git config user.email "<ID>+<login>@users.noreply.github.com"`. Historii nie przepisuj bez przemyślenia.
 
 ## 7. Podłączenie modeli
+- **Najłatwiej:** otwórz `https://TWOJA-DOMENA.vercel.app/podlacz.html` - kreator krok po kroku dla 37 klientów AI (Claude, ChatGPT, Gemini, Cursor, VS Code ...) z przyciskiem „Testuj połączenie”.
 - Claude Code / Desktop / Cursor: `ai\mcp\README.md`
-- Custom GPT / Gemini: `ai\openai-actions\INSTRUCTIONS.md`
+- Custom GPT: `ai\openai-actions\INSTRUCTIONS.md`; Gemini: `ai\gemini\INSTRUCTIONS.md`
 - Skill dla Claude: `ai\claude-skill\SKILL.md`; ogólne instrukcje: `ai\AGENTS.md`, `ai\SYSTEM_PROMPT.md`.
+- Baza wiedzy o prawie (poradniki dla modeli): `https://TWOJA-DOMENA.vercel.app/wiedza/index.json` oraz `/llms.txt`; pliki w `vercel\public\wiedza\`.
+
+## 8. Aktualizacja danych po wdrożeniu
+Gdy wszystko stoi, nie powtarzasz kroków 2-5. Otwórz folder w Claude Code i napisz **„Uaktualnij to wszystko”** (albo uruchom `python aktualizuj.py`). Komenda przyrostowo pobiera nowości z API Sejmu, eksportuje tylko zmienione akty, synchronizuje bazę (`load_to_postgres.py --sync`, w transakcji), odświeża `data-info.json` i na końcu - zgodnie z `.claude\uaktualnij.config.json` - robi commit, push i wdrożenie.
+- Hasło do bazy: skopiuj `.env.example` jako `.env.local` i wpisz `DATABASE_URL`. Bez niego krok bazy jest pomijany, a zmiany czekają w `stan\kolejka.json`.
+- Domyślnie `auto_push` i `auto_deploy` są `false`: wypchnięcie na GitHub i `vercel --prod` dzieją się dopiero po Twojej zgodzie. Włączenie: ustaw `true` w `.claude\uaktualnij.config.json` (wdrożenie wymaga zainstalowanego i zalogowanego Vercel CLI, krok 5).
+- Wdrożenie jest wstrzymywane, dopóki baza nie ma wszystkich zmian (strona nie poda daty stanu, której baza nie zna).
+- Limit rozmiaru: `baza_max_mb` (domyślnie 450 dla darmowego Neon). Na planie płatnym ustaw `null`.
+- Opis dla właściciela, cofanie zmian i harmonogram: `docs\AKTUALIZACJA.md`.
+
+### 8a. Dzienna aktualizacja w chmurze (GitHub Actions) - opcjonalna
+
+Plik `.github/workflows/dzienna-aktualizacja.yml` co noc (03:17 UTC) odświeża dane i bazę, a potem commituje `data-info.json` (Vercel wdraża zmianę sam, jeśli repozytorium jest do niego podłączone). Działa na **osobnym stanie** `ci_stan/` (w repozytorium jest tylko `ci_stan/manifest.json`). Lokalny `stan/`, którego używa `python aktualizuj.py`, to osobny stan. Oba tryby zapisują `data-info.json`, więc przed lokalnym pushem rób `git pull --rebase`.
+
+Dopóki poniższe warunki nie są spełnione, workflow kończy się błędem (czerwony, z mailem o awarii). **Przed pierwszym pushem wykonaj kroki 1-3 albo usuń sekcję `schedule` z pliku workflow** (zostanie ręczne uruchamianie `workflow_dispatch`):
+1. GitHub > Settings > Secrets and variables > Actions: dodaj sekret `DATABASE_URL` (opcjonalnie zmienną `DB_MAX_MB`, domyślnie 450).
+2. Zbuduj manifest CI z sumami kontrolnymi (lokalnie, z danymi w `dane/`, bez pobierania, kilka minut): `python pipeline/update_data.py --bootstrap --hash --stan ci_stan`.
+3. Zatwierdź go: `git add ci_stan/manifest.json`, `git commit` (ok. 9 MB; reszta `ci_stan/` jest w `.gitignore`).
+
+Manifest CI powinien odpowiadać stanowi bazy. Jeśli po lokalnej aktualizacji (`aktualizuj.py`) baza dostała nowsze dane niż manifest CI, kolejny przebieg CI zrobi część pracy drugi raz (jest idempotentny, więc to tylko zbędny ruch). Wtedy odśwież manifest tak jak w kroku 2 i zatwierdź.
 
 ## Rozwiązywanie problemów
 | Objaw | Przyczyna / rozwiązanie |
@@ -107,7 +129,7 @@ git push -u origin main
   - Neon: ustaw **autosuspend** (scale to zero), limit **compute** (max CU) oraz **spending limit** / alerty kosztów w ustawieniach rozliczeń; na planie darmowym wyczerpanie limitu zatrzyma bazę zamiast generować rachunek.
   - Vercel: włącz **Spend Management** (limit wydatków) i obserwuj Usage.
   - Jeśli nadużycia się pojawią, przełącz na tryb zamknięty: ustaw `API_KEY` i wdróż ponownie (`vercel --prod`). Klucz wyciekł? `vercel env rm API_KEY`, dodaj nowy, `vercel --prod`.
-- Po każdym odświeżeniu danych uruchom `python pipeline\build_data_info.py` i wdróż ponownie, by `data_as_of` było prawdziwe.
+- Po każdym odświeżeniu danych `data_as_of` musi być prawdziwe: robi to `python aktualizuj.py` (krok `info`), a wdrożenie następuje za Twoją zgodą (sekcja 8). Ręcznie: `python pipeline\build_data_info.py` i `vercel --prod`.
 - Dane są publiczne (akty prawne z ISAP/Sejm), bez danych osobowych użytkowników. Zapytania użytkowników mogą jednak trafiać do logów Vercel.
 - W trybie zamkniętym do Custom GPT / connectorów dawaj klucz tylko w polu uwierzytelniania.
 - Modele korzystające z API mają obowiązek podawać „Stan danych na dzień <data_as_of>” (zob. `ai\AGENTS.md`).

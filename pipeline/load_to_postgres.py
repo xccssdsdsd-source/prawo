@@ -8,6 +8,9 @@ Tryb przyrostowy (po aktualizacji danych):
     w jednej transakcji: usuwa z bazy removed+changed, laduje added+changed, przelicza n_chunks, potem ANALYZE.
     Blad w trakcie = ROLLBACK, baza zostaje w poprzednim stanie.
 
+Nowe dokumenty odrzucone przez --max-mb sa zapisywane w pominiete_limit.json (obok pliku --sync; --skipped-file
+zmienia sciezke). Orkiestrator dolacza je do nastepnej kolejki bazy, wiec nie gina po cichu - wracaja, gdy zwolni sie miejsce.
+
 Kody wyjscia: 0 ok, 1 blad, 2 brak DATABASE_URL (orkiestrator traktuje jako "krok pominiety").
 DATABASE_URL brany ze zmiennej srodowiskowej, a jesli jej brak - z .env.local w korzeniu repo (wartosc nigdy nie jest wypisywana).
 """
@@ -221,6 +224,29 @@ def db_size(conn):
 
 # ----------------------------------------------------------------- tryb --sync
 
+def save_skipped(path, blocked, max_mb=None):
+    """Zapisuje (atomowo) doc_id odrzucone przez limit rozmiaru; pusty zbior => usuwa plik."""
+    path = Path(path)
+    if not blocked:
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            pass
+        return
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps({"updated": time.strftime("%Y-%m-%dT%H:%M:%S"), "max_mb": max_mb,
+                               "doc_ids": sorted(blocked)}, ensure_ascii=False, indent=1), encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def load_skipped(path):
+    try:
+        d = json.loads(Path(path).read_text(encoding="utf-8"))
+        return [str(x) for x in d.get("doc_ids") or []]
+    except (OSError, ValueError, AttributeError):
+        return []
+
+
 def plan_sync(added, changed, removed, docs):
     """Czysta logika planu (testowalna bez bazy). docs = dokumenty znalezione w plikach wejsciowych (tylko cele)."""
     targets = list(dict.fromkeys(added + changed))
@@ -281,9 +307,15 @@ def run_sync(a, paths, url):
         nd = conn.execute("select count(*) from documents").fetchone()[0]
         nc = conn.execute("select count(*) from chunks").fetchone()[0]
         size = db_size(conn)
+    skipped_file = Path(a.skipped_file) if a.skipped_file else Path(a.sync).resolve().parent / "pominiete_limit.json"
+    # po udanym commicie: zapamietaj odrzucone (albo wyczysc liste, jesli nic nie odrzucono); dokumenty z listy
+    # trafialy do tego przebiegu jako "added", wiec nowa lista = tylko te, ktore znowu zablokowal limit
+    previous = set(load_skipped(skipped_file))
+    save_skipped(skipped_file, blocked | (previous - set(plan["targets"]) - set(removed)), a.max_mb)
     if blocked:
         print(f"! Limit --max-mb {a.max_mb:g} MB osiagniety: nie dodano {len(blocked)} nowych dokumentow "
-              f"({', '.join(sorted(blocked)[:10])}{'...' if len(blocked) > 10 else ''}).", file=sys.stderr)
+              f"({', '.join(sorted(blocked)[:10])}{'...' if len(blocked) > 10 else ''}). "
+              f"Lista zapisana w {skipped_file.name} - zostana ponowione przy kolejnej synchronizacji.", file=sys.stderr)
     print(f"Sync gotowy: usunieto {n_del} dok., zaladowano {len(loaded)} dok. / {nchunks} fragm., "
           f"pominieto przez limit {len(blocked)}, brak w plikach {len(plan['missing'])}.")
     print(f"Baza teraz: dokumentow {nd}, fragmentow {nc}, rozmiar {size/1048576:.0f} MB, czas {time.time()-t0:.0f}s")
@@ -307,6 +339,8 @@ def main(argv=None):
     ap.add_argument("--input", nargs="+", default=[str(HERE / "out" / "chunks.jsonl")],
                     help="jeden lub wiele plikow JSONL (np. chunks.jsonl chunks_saos.jsonl)")
     ap.add_argument("--sync", metavar="ZMIANY_JSON", help="tryb przyrostowy wg stan/zmiany.json (added/changed/removed)")
+    ap.add_argument("--skipped-file", metavar="PLIK",
+                    help="gdzie zapisac liste dokumentow odrzuconych przez --max-mb (domyslnie pominiete_limit.json obok pliku --sync)")
     ap.add_argument("--schema", action="store_true", help="utworz schemat (schema.sql) przed ladowaniem")
     ap.add_argument("--truncate", action="store_true", help="wyczysc documents/chunks przed ladowaniem")
     ap.add_argument("--kategorie", help="lista po przecinku, np. ujednolicone,jednolite")

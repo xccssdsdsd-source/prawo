@@ -4,7 +4,7 @@ Wspólna umowa między częściami projektu. Każdy agent trzyma się swojego ka
 
 ## Układ katalogów (kto co pisze)
 - `pipeline/` – przetwarzanie danych: ekstrakcja tekstu, dzielenie na artykuły, eksport JSONL, ładowanie do Postgresa, źródła dodatkowe.
-- `vercel/` – aplikacja Vercel (TypeScript, Node 20, Vercel Functions w `vercel/api/*.ts`), `vercel/lib/*.ts`, `vercel/public/*`.
+- `vercel/` – aplikacja Vercel (TypeScript, Node 24.x na Vercel - lokalnie do testów wystarczy Node 20+, Vercel Functions w `vercel/api/*.ts`), `vercel/lib/*.ts`, `vercel/public/*`.
 - `ai/` – instrukcje dla modeli: `AGENTS.md`, `SYSTEM_PROMPT.md`, `claude-skill/SKILL.md`, `openai-actions/INSTRUCTIONS.md`, `mcp/README.md`.
 - `docs/` – dokumentacja dla człowieka (`DEPLOY.md`), ta specyfikacja.
 - Dane źródłowe: `dane/<kategoria>/…` (tylko do odczytu). Metadane: `dane/indeks_obowiazujacych.json`, `dane/indeks_mp.json`, `dane/indeks_ujednolicone.json`.

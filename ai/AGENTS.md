@@ -13,7 +13,7 @@ Narzędzia (MCP) / endpointy (REST):
 
 Uwaga na nazwy: fraza wyszukiwania to `query` w MCP, a `q` w REST. Endpoint MCP: `/api/mcp` (tylko POST, Streamable HTTP; GET zwraca 405 – to normalne).
 
-Auth REST: API jest publiczne i otwarte – klucz jest opcjonalny. Nagłówek `Authorization: Bearer <API_KEY>` (lub `x-api-key`) jest potrzebny tylko wtedy, gdy właściciel wdrożenia ustawił `API_KEY` (tryb zamknięty; wtedy brak klucza = 401). Limit żądań: ok. 60/min/IP dla wyszukiwania i 120/min/IP dla pozostałych; po przekroczeniu HTTP 429 z `Retry-After`.
+Auth REST: API jest publiczne i otwarte – klucz jest opcjonalny. Nagłówek `Authorization: Bearer <API_KEY>` (lub `x-api-key`) jest potrzebny tylko wtedy, gdy właściciel wdrożenia ustawił `API_KEY` (tryb zamknięty; wtedy brak klucza = 401). Limit żądań: ok. 60/min/IP dla wyszukiwania i 120/min/IP dla pozostałych punktów REST oraz 600/min/IP dla MCP; po przekroczeniu HTTP 429 z `Retry-After` (przy konektorach chmurowych IP bywa wspólne dla wielu użytkowników, więc 429 nie zawsze oznacza błąd konfiguracji).
 
 ## 0. OBOWIĄZKOWA zasada: stan danych (data freshness)
 W KAŻDEJ odpowiedzi opartej na API podaj linię: **„Stan danych na dzień <data_as_of>”**. Źródła wartości, w kolejności: pole `data_as_of` z odpowiedzi API/narzędzia MCP (REST ma też nagłówek `X-Data-As-Of`), `GET /api/health`, `GET /data-info.json`. Dodaj ostrzeżenie: przepisy ogłoszone po tej dacie nie są uwzględnione, a teksty ujednolicone mogą odzwierciedlać stan starszy niż `data_as_of` (stan na dzień ich sporządzenia). Nie pomijaj tego, nawet gdy wynik wygląda na pewny.

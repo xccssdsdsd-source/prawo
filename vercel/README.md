@@ -34,7 +34,7 @@ Testy jednostkowe (vitest) obejmują `lib/query.ts`, `lib/auth.ts`, `lib/warning
 ## Uwagi
 
 - **Tryb otwarty/zamknięty:** `API_KEY` jest opcjonalny. Brak/pusty = API publiczne bez klucza (domyślnie; odpowiedzi z `Cache-Control: public, s-maxage=...` – 3600 s dla article/act, 300 s dla search – więc CDN Vercela odciąża bazę). `API_KEY` ustawiony = wymagany Bearer / `x-api-key`, odpowiedzi `private, no-store`. Dotyczy też `/api/mcp`. `/api/health`, `/openapi.json`, `/llms.txt` zawsze publiczne.
-- **Ochrona przed nadużyciem:** limit w pamięci instancji per IP (60/min search, 120/min article/act i mcp), nagłówki `X-RateLimit-*`, 429 + `Retry-After`. To best-effort i PER-INSTANCJA (serverless) – docelowo włącz Vercel Firewall / Rate Limiting. Twarde limity: `q` ≤ 300 znaków, `limit` ≤ 20, artykuł ≤ 12 000 znaków.
+- **Ochrona przed nadużyciem:** limit w pamięci instancji per IP (60/min search, 120/min article/act, 600/min mcp (domyślnie; env `MCP_RATE_LIMIT`, bo konektory chmurowe dzielą IP)), nagłówki `X-RateLimit-*`, 429 + `Retry-After`. To best-effort i PER-INSTANCJA (serverless) – docelowo włącz Vercel Firewall / Rate Limiting. Twarde limity: `q` ≤ 300 znaków, `limit` ≤ 20, artykuł ≤ 12 000 znaków.
 - **Aktualność danych:** `public/data-info.json` (generowany skryptem) jest wbudowany w funkcje; `/api/health` zwraca `data_as_of` i `data_info`, każda odpowiedź ma nagłówek `X-Data-As-Of`, a search/article/act pole `data_as_of`. Po odświeżeniu danych zrób redeploy.
 - Przy otwartym API CORS `*` jest zamierzony; w trybie zamkniętym nie umieszczaj klucza w kodzie front-endu.
 - Zapytania są parametryzowane (`$1...`); wartości od użytkownika nigdy nie są sklejane z SQL.

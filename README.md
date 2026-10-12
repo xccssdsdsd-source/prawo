@@ -30,24 +30,34 @@ dla aktów prawa polskiego ogłoszonych w Dzienniku Ustaw (Dz.U.) i Monitorze Po
 - Tekst ujednolicony odzwierciedla stan prawny **na dzień jego sporządzenia** – może być starszy niż `data_as_of`, a zmiany ogłoszone później mogą nie być w nim ujęte.
 - Zakres: tylko akty o statusie „obowiązujący” (+ teksty ujednolicone z ISAP).
 
-### Jak odświeżyć dane
+### Jak odświeżyć dane („Uaktualnij to wszystko”)
+
+Otwórz folder w Claude Code i napisz **„Uaktualnij to wszystko”** albo uruchom jedną komendę:
+
+```powershell
+python aktualizuj.py --dry-run     # plan: co jest nowe, zmienione, wycofane (niczego nie zmienia)
+python aktualizuj.py               # przyrostowa aktualizacja: kopia -> dane -> źródła -> eksport -> info -> testy -> baza -> commit -> wdrożenie
+```
+
+Pobiera tylko nowości, przenosi uchylone akty do `dane\_wycofane\`, odświeża bazę w jednej transakcji i `data_as_of`, a na końcu zapisuje raport `stan\raport_RRRR-MM-DD.md`. Push na GitHub i wdrożenie na Vercel dzieją się dopiero za Twoją zgodą (`.claude\uaktualnij.config.json`). Hasło do bazy (`DATABASE_URL`) wpisz do `.env.local` (wzór: `.env.example`). Opis dla właściciela: **[docs/AKTUALIZACJA.md](docs/AKTUALIZACJA.md)**; instrukcja dla Claude'a: [CLAUDE.md](CLAUDE.md).
+
+Ręczne kroki (starsze skrypty, nadal działają; do pierwszego pobrania całości):
 
 ```powershell
 python pobierz_prawo.py                # pobranie aktów z ELI Sejmu
 python pobierz_wiecej.py               # uzupełnienia (m.in. teksty ujednolicone)
-python pipeline\export_chunks.py       # eksport fragmentów do pipeline\out\chunks.jsonl
+python pipeline\export_chunks.py       # pełny eksport fragmentów do pipeline\out\chunks.jsonl (ok. 9 min)
 python pipeline\build_data_info.py     # odświeża vercel\public\data-info.json (data_as_of)
-python pipeline\load_to_postgres.py    # ładowanie do Postgresa (patrz docs\DEPLOY.md)
-vercel --prod                          # (w katalogu vercel\) wdrożenie nowego data-info.json
+python pipeline\load_to_postgres.py    # pełne ładowanie do Postgresa (patrz docs\DEPLOY.md)
 ```
 
-Pominięcie `build_data_info.py` oznacza, że API będzie podawać nieaktualną datę stanu danych.
+Pominięcie `build_data_info.py` oznacza, że API będzie podawać nieaktualną datę stanu danych. `aktualizuj.py` robi to sam.
 
 ## Czego nie obejmuje
 
 - akty uchylone i wygasłe,
-- prawo UE,
-- orzecznictwo sądów (poza wyrokami TK ogłaszanymi w Dz.U.),
+- prawo UE (źródło EUR-Lex jest przygotowane, ale uśpione),
+- orzecznictwo sądów (poza wyrokami TK ogłaszanymi w Dz.U.; źródło SAOS jest przygotowane, ale uśpione),
 - akty prawa miejscowego i dzienniki wojewódzkie,
 - akty ogłoszone po dacie `data_as_of`.
 
@@ -76,7 +86,7 @@ Pominięcie `build_data_info.py` oznacza, że API będzie podawać nieaktualną 
 
 Pełna instrukcja: **[docs/DEPLOY.md](docs/DEPLOY.md)** (Neon, ładowanie danych, Vercel, publikacja na GitHub). W skrócie: baza Neon -> `python pipeline\load_to_postgres.py --schema` -> `vercel --prod` w katalogu `vercel\` z ustawionym `DATABASE_URL`.
 
-Repozytorium: `https://github.com/TWOJ-LOGIN-GITHUB/prawo-pl` *(placeholder – podstaw swoją nazwę użytkownika)*.
+Repozytorium: `https://github.com/xccssdsdsd-source/prawo`.
 
 ## Endpointy
 
@@ -93,8 +103,10 @@ Baza: `https://TWOJA-DOMENA.vercel.app` *(placeholder)*.
 
 Klucz API jest opcjonalny; jeśli właściciel go włączył, przesyłaj `Authorization: Bearer <klucz>` lub `x-api-key`.
 
-## Podłączenie Claude / GPT
+## Podłączenie Claude / GPT / Gemini
 
+- **Kreator krok po kroku dla 37 klientów AI** (Claude, ChatGPT, Gemini, Cursor, VS Code ...) z testem połączenia: po wdrożeniu otwórz `https://TWOJA-DOMENA.vercel.app/podlacz.html` (plik: [vercel/public/podlacz.html](vercel/public/podlacz.html)). Domenę podstawia sam z paska adresu.
+- Gemini: [ai/gemini/INSTRUCTIONS.md](ai/gemini/INSTRUCTIONS.md); skąd pochodzą instrukcje i jak je odświeżać: [ai/SOURCES.md](ai/SOURCES.md)
 - Claude Code / Desktop / Cursor (MCP): [ai/mcp/README.md](ai/mcp/README.md)
 - Skill dla Claude: [ai/claude-skill/SKILL.md](ai/claude-skill/SKILL.md)
 - Custom GPT / Gemini / function calling: [ai/openai-actions/INSTRUCTIONS.md](ai/openai-actions/INSTRUCTIONS.md)
@@ -108,6 +120,14 @@ Klucz API jest opcjonalny; jeśli właściciel go włączył, przesyłaj `Author
 4. Przekazuj `warnings`, zaznaczaj `truncated`, kończ zastrzeżeniem „to nie porada prawna”.
 
 Pełne zasady: [ai/AGENTS.md](ai/AGENTS.md).
+
+## Baza wiedzy o polskim prawie
+
+Poradniki w markdown po polsku dla modeli i ludzi (hierarchia źródeł prawa, jak czytać akt, jak cytować, terminy i przedawnienie, kodeksy i główne ustawy, słownik pojęć, pułapki, nadchodzące zmiany ...): [vercel/public/wiedza/](vercel/public/wiedza/) - po wdrożeniu `/wiedza/<temat>.md`, spis `/wiedza/index.json`, skrót w `/llms.txt`. Każde twierdzenie o przepisie ma odnośnik do artykułu zweryfikowany z danymi (`python pipeline\tools\lookup_article.py --verify-md ...`). To nie jest porada prawna. Zasady utrzymania: [vercel/public/wiedza/README.md](vercel/public/wiedza/README.md).
+
+## Dodatkowe źródła (uśpione)
+
+Orzeczenia sądów (SAOS) i prawo UE po polsku (EUR-Lex) są przygotowane w `zrodla\`, ale wyłączone (`enabled:false` w `zrodla\sources.json`). Włączenie i ograniczenia (licencja SAOS, rozmiar bazy): [zrodla/README.md](zrodla/README.md).
 
 ## Rozmiar danych
 

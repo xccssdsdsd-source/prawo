@@ -6,7 +6,7 @@ Kontrakt: docs/UPDATE_SPEC.md, sekcja "Kontrakt pipeline/update_data.py".
 
     python pipeline/update_data.py [--dry-run] [--bootstrap] [--full]
         [--dane DIR] [--stan DIR] [--lata 2025,2026] [--workers N]
-        [--max-akty N] [--force-removals] [--hash]
+        [--max-akty N] [--force-removals] [--accept-shrink] [--hash]
 
 Co robi:
   * pobiera swieze metadane DU i MP (wszystkie lata, wszystkie statusy),
@@ -26,6 +26,12 @@ Bezpieczenstwo danych:
   (c) wycofane pliki sa PRZENOSZONE do dane/_wycofane/<kategoria>/, nigdy kasowane,
   (d) zapisy atomowe, checkpointy manifestu + dziennik stan/biezacy_przebieg.json (wznawialnosc),
   (e) --dry-run nie zapisuje niczego poza stdout i stan/plan_dry_run.json.
+  (f) wycofania liczone tez per rok/wydawca (> 20% i >= 5 aktow albo pusty status => rok pominiety),
+  (g) tresc HTML/PDF jest walidowana; podejrzane skurczenie pliku (< 30%) nie nadpisuje go; stara wersja
+      zmienionego pliku trafia do dane/_wycofane/_poprzednie/,
+  (h) zamiar nadpisania pliku jest zapisywany w stan/biezacy_przebieg.wal PRZED nadpisaniem (twarde przerwanie),
+  (i) niezuzyty poprzedni stan/zmiany.json jest scalany z nowym (patrz previous_unconsumed).
+Wspolbieznosc: domyslnie 4 watki; metadane zawsze <= 4 (META_WORKERS), nieudane lata sa ponawiane sekwencyjnie.
 """
 from __future__ import annotations
 
@@ -60,6 +66,7 @@ REMOVAL_LIMIT = 0.03  # 3%
 CI_MODE = False
 RETRY_DAYS = 30   # tyle dni ponawiamy pobranie tekstu swiezo ogloszonego aktu, ktory jeszcze go nie ma
 
+EMPTY_STATUS = "(pusty)"   # API zwrocilo akt bez pola status
 ST_OBOW = "obowiązujący"
 ST_TJ = "akt posiada tekst jednolity"
 ST_U = (ST_OBOW, ST_TJ)
@@ -337,7 +344,7 @@ def digest_year(pub: str, year: int, items: list):
         if not isinstance(pos, int):
             raise HttpError(f"akt bez pozycji w {pub}/{year}")
         base = f"{pub}/{year}/{pos}"
-        status = it.get("status", "")
+        status = it.get("status") or ""
         statuses[base] = status
         if latest is None or pos > latest[0]:
             latest = (pos, it.get("displayAddress") or f"{pub} {year} poz. {pos}",
@@ -472,6 +479,8 @@ class Store:
         self.dry = dry
         self.manifest_path = stan / "manifest.json"
         self.journal_path = stan / "biezacy_przebieg.json"
+        self.wal_path = stan / "biezacy_przebieg.wal"   # write-ahead: zamiary nadpisania plikow (append-only)
+        self._wal_lock = threading.Lock()
         self.manifest: dict[str, dict] = {}
         self.ops: dict[str, str] = {}
         self.failed: dict[str, str] = {}
@@ -499,11 +508,31 @@ class Store:
         if isinstance(j, dict) and isinstance(j.get("ops"), dict):
             self.ops = dict(j["ops"])
             self.started = j.get("started", self.started)
-            return len(self.ops)
-        return 0
+        # WAL: zamiary nadpisania pliku zapisane PRZED nadpisaniem; jesli proces zginal miedzy nadpisaniem
+        # a checkpointem, tylko tu zostal slad zmiany (manifest nie mial sha256 starej tresci).
+        try:
+            if self.wal_path.exists():
+                for line in self.wal_path.read_text(encoding="utf-8").splitlines():
+                    op, _, key = line.partition("\t")
+                    if op in ("changed", "added") and KEY_RE.match(key):
+                        self.ops[key] = merge_op(self.ops.get(key), op)
+        except OSError:
+            log("  uwaga: nie mozna odczytac dziennika WAL - ignoruje")
+        return len(self.ops)
 
     def note(self, key: str, op: str):
         self.ops[key] = merge_op(self.ops.get(key), op)
+
+    def intent(self, key: str, op: str):
+        """Wywolywane z watku roboczego tuz przed nadpisaniem istniejacego pliku (write-ahead)."""
+        if self.dry:
+            return
+        with self._wal_lock:
+            self.stan.mkdir(parents=True, exist_ok=True)
+            with open(self.wal_path, "ab") as f:
+                f.write(f"{op}\t{key}\n".encode("utf-8"))
+                f.flush()
+                os.fsync(f.fileno())
 
     def checkpoint(self):
         if self.dry:
@@ -524,10 +553,11 @@ class Store:
     def clear_journal(self):
         if self.dry:
             return
-        try:
-            self.journal_path.unlink()
-        except FileNotFoundError:
-            pass
+        for p in (self.journal_path, self.wal_path):
+            try:
+                p.unlink()
+            except FileNotFoundError:
+                pass
 
 
 def merge_op(prev, new):
@@ -686,12 +716,55 @@ def make_plan(manifest: dict, meta: Meta, dane: Path, full: bool):
             continue
         base = f"{pub}/{y}/{p}"
         st = meta.status_by_key.get(base)
+        if st is not None and not str(st).strip():
+            st = EMPTY_STATUS
         reason = f"status: {st}" if st is not None else "brak w API"
         plan["remove"].append((key, reason, st or "brak w API"))
     for k in ("add", "check", "repair", "move"):
         plan[k].sort(key=sort_pos)
     plan["remove"].sort(key=lambda r: sort_pos(r[0]))
     return plan
+
+
+YEAR_REMOVAL_LIMIT = 0.20   # wycofania w jednym roku/wydawcy > 20% jego aktywnych wpisow z plikami ...
+YEAR_REMOVAL_MIN = 5         # ... i co najmniej tyle sztuk => rok uznany za niewiarygodny, jego wycofania pomijane
+
+
+def _year_removal_guard(plan, manifest: dict, meta: Meta):
+    """Prog per rok/wydawca (globalne 3% nie lapie uszkodzonej odpowiedzi pojedynczego roku) oraz
+    kandydaci z pustym statusem (API zwrocilo akt bez pola status => nie wiemy, czy jest uchylony)."""
+    warns = []
+    cand: dict[tuple, list] = {}
+    for item in plan["remove"]:
+        key = item[0]
+        if manifest[key].get("files"):
+            pub, y, _, _ = parse_key(key)
+            cand.setdefault((pub, y), []).append(item)
+    if not cand:
+        return warns
+    active: dict[tuple, int] = {}
+    for k, e in manifest.items():
+        if not e.get("wycofany") and e.get("files"):
+            pub, y, _, _ = parse_key(k)
+            active[(pub, y)] = active.get((pub, y), 0) + 1
+    skip: set = set()
+    for (pub, y), items in cand.items():
+        n, act = len(items), active.get((pub, y), 0)
+        unknown = [i for i in items if i[2] == EMPTY_STATUS]
+        if unknown:
+            skip.update(i[0] for i in unknown)
+            warns.append(f"POMINIETO wycofanie {len(unknown)} aktow z {pub}/{y}: API zwrocilo pusty status "
+                         f"(np. {unknown[0][0]}) - odpowiedz roku wyglada na uszkodzona.")
+        rest = [i for i in items if i[0] not in skip]
+        if act and len(rest) >= YEAR_REMOVAL_MIN and len(rest) / act > YEAR_REMOVAL_LIMIT:
+            skip.update(i[0] for i in rest)
+            warns.append(f"POMINIETO wycofania w {pub}/{y}: {len(rest)} z {act} aktow ({len(rest) / act:.0%} > "
+                         f"{YEAR_REMOVAL_LIMIT:.0%}) - wyglada na uszkodzona odpowiedz roku. "
+                         f"Sprawdz reczne; jesli to prawidlowe: --force-removals.")
+    if skip:
+        plan["remove_skipped"] = [i for i in plan["remove"] if i[0] in skip] + list(plan.get("remove_skipped") or [])
+        plan["remove"] = [i for i in plan["remove"] if i[0] not in skip]
+    return warns
 
 
 def removal_guard(plan, meta: Meta, manifest: dict, only_years, force: bool):
@@ -711,6 +784,8 @@ def removal_guard(plan, meta: Meta, manifest: dict, only_years, force: bool):
     active = sum(1 for k, e in manifest.items()
                  if not e.get("wycofany") and e.get("files")
                  and (parse_key(k)[0], parse_key(k)[1]) in meta.ok_years)
+    if not force:
+        warns += _year_removal_guard(plan, manifest, meta)
     n = sum(1 for k, _, _ in plan["remove"] if manifest[k].get("files"))
     if n and active:
         ratio = n / active
@@ -728,7 +803,7 @@ def removal_guard(plan, meta: Meta, manifest: dict, only_years, force: bool):
 # --------------------------------------------------------------------------- zadania pobierania
 
 _ERR_TITLE = re.compile(
-    r"<title[^>]*>\s*(?:\d{3}|error|bad gateway|service unavailable|gateway time-?out|"
+    r"<title[^>]*>\s*(?:\d{3}\b|error\b|bad gateway|service unavailable|gateway time-?out|"
     r"too many requests|internal server error|forbidden|not found|access denied|request blocked)", re.I)
 SHRINK_MIN_OLD = 2000      # ponizej tego rozmiaru poprzedniego pliku kontroli spadku nie stosujemy
 SHRINK_RATIO = 0.30        # nowa tresc < 30% poprzedniej => podejrzana (strona bledu/obcieta odpowiedz)
@@ -795,6 +870,9 @@ def run_job(client, dane: Path, job: dict, intent=None):
 
         body, ext, errs, empties = None, None, [], []
         for e_, url in cands:
+            if errs and have_old and Path(have_old[0]).suffix.lstrip(".") != e_:
+                # wyzszy priorytetem format zwrocil blad/smieci: nie podmieniamy istniejacego pliku innym formatem
+                continue
             try:
                 st, b = client.get(url)
             except HttpError as ex_:
@@ -1025,7 +1103,7 @@ def execute(store: Store, client, dane: Path, meta: Meta, plan: dict, args, inte
                 j = next(it, None)
                 if j is None:
                     break
-                inflight[ex.submit(run_job, client, dane, j)] = j
+                inflight[ex.submit(run_job, client, dane, j, store.intent)] = j
             if not inflight:
                 break
             done, _ = wait(set(inflight), return_when=FIRST_COMPLETED)
@@ -1108,7 +1186,9 @@ def write_indexes(dane: Path, new: dict, old: dict) -> list[str]:
     for n, fname in INDEKSY.items():
         if old.get(n) is not None and old[n] == new[n]:
             continue
-        atomic_write_json(dane / fname, new[n], indent=1)
+        # istniejace indeksy maja CRLF (zapis z Windows); zachowujemy, by diff nie obejmowal calego pliku
+        # (w JSON-ie nowe linie w tekstach sa zapisane jako sekwencja backslash+n, wiec zamiana jest bezpieczna)
+        atomic_write_bytes(dane / fname, json_bytes(new[n], 1).replace(b"\n", b"\r\n"))
         written.append(fname)
     return written
 
@@ -1125,11 +1205,52 @@ def load_old_indexes(dane: Path):
 
 # --------------------------------------------------------------------------- glowna logika
 
+def pid_alive(pid: int) -> bool:
+    """Czy proces o danym PID istnieje (Windows: OpenProcess; nigdy os.kill - na Windows by go zabil)."""
+    if pid <= 0:
+        return False
+    if os.name == "nt":
+        try:
+            import ctypes
+            k32 = ctypes.windll.kernel32
+            h = k32.OpenProcess(0x1000, False, pid)   # PROCESS_QUERY_LIMITED_INFORMATION
+            if not h:
+                return k32.GetLastError() == 5        # ERROR_ACCESS_DENIED = istnieje, ale nie nasz
+            try:
+                code = ctypes.c_ulong()
+                if k32.GetExitCodeProcess(h, ctypes.byref(code)):
+                    return code.value == 259           # STILL_ACTIVE
+                return True
+            finally:
+                k32.CloseHandle(h)
+        except Exception:  # noqa: BLE001
+            return True        # nie wiemy => zaklad, ze zyje (bezpieczniej nie przejmowac blokady)
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except OSError:
+        return False
+    return True
+
+
+def _lock_pid(lock: Path):
+    try:
+        return int(lock.read_text(encoding="utf-8").split()[0])
+    except (OSError, ValueError, IndexError):
+        return None
+
+
 def acquire_lock(stan: Path):
     stan.mkdir(parents=True, exist_ok=True)
     lock = stan / "update.lock"
     if lock.exists() and time.time() - lock.stat().st_mtime > 3 * 3600:
-        lock.unlink()  # przeterminowana (przerwany proces)
+        # dlugi przebieg (np. --full) moze trwac > 3 h: blokade przejmujemy tylko, gdy wlasciciel nie zyje
+        pid = _lock_pid(lock)
+        if pid is None or not pid_alive(pid):
+            lock.unlink()
     try:
         fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
     except FileExistsError:
@@ -1167,8 +1288,9 @@ def summarize_plan(plan, meta: Meta, manifest: dict) -> dict:
 
 
 def run(args, client=None) -> int:
-    global CI_MODE
+    global CI_MODE, ACCEPT_SHRINK
     CI_MODE = bool(getattr(args, "ci", False))
+    ACCEPT_SHRINK = bool(getattr(args, "accept_shrink", False))
     dane = Path(args.dane).resolve()
     stan = Path(args.stan).resolve()
     dry = args.dry_run
@@ -1218,9 +1340,14 @@ def _run(args, client, dane, stan, dry, lata, t0, interrupted) -> int:
             return 0
         store.manifest = m
         store.checkpoint()
+        pops = previous_unconsumed(stan)
         atomic_write_json(stan / "zmiany.json", {
-            "run_at": now_iso(), "added": [], "changed": [], "removed": [], "unchanged": act,
-            "latest": {}, "bootstrap": True}, indent=2)
+            "run_at": now_iso(),
+            "added": sorted(k for k, o in pops.items() if o == "added"),
+            "changed": sorted(k for k, o in pops.items() if o == "changed"),
+            "removed": sorted(k for k, o in pops.items() if o == "removed"),
+            "unchanged": act, "latest": {}, "bootstrap": True,
+            "merged_previous": len(pops)}, indent=2)
         log(f"Zapisano {store.manifest_path}")
         return 0
 
@@ -1319,7 +1446,11 @@ def _run(args, client, dane, stan, dry, lata, t0, interrupted) -> int:
     idx_written, idx_warn = _finish_indexes(store, dane, meta, old_idx)
     warnings += idx_warn
 
-    ops = store.ops
+    prev_ops = previous_unconsumed(stan)
+    if prev_ops:
+        warnings.append(f"Dolaczono {len(prev_ops)} niezuzytych zmian z poprzedniego stan/zmiany.json "
+                        f"(nie zostal jeszcze wczytany do kolejki eksportu/bazy).")
+    ops = combine_ops(prev_ops, store.ops)
     added = sorted(k for k, o in ops.items() if o == "added")
     changed = sorted(k for k, o in ops.items() if o == "changed")
     removed = sorted(k for k, o in ops.items() if o == "removed")
@@ -1334,7 +1465,9 @@ def _run(args, client, dane, stan, dry, lata, t0, interrupted) -> int:
         "moved": sorted(plan["move"]),
         "failed": [{"klucz": k, "blad": v} for k, v in sorted(store.failed.items())],
         "odlozone": deferred,
-        "partial": bool(store.failed or meta.failed or deferred or (lata is not None)),
+        "partial": bool(store.failed or meta.failed or deferred or (lata is not None)
+                        or plan.get("remove_skipped")),
+        "merged_previous": len(prev_ops),
         "warnings": warnings, "dry_run": False, "indeksy_zapisane": idx_written,
         "czas_s": round(time.time() - t0, 1),
     }
@@ -1349,6 +1482,37 @@ def _run(args, client, dane, stan, dry, lata, t0, interrupted) -> int:
     if total >= 5 and counters["failed"] == total:
         raise Fatal("Wszystkie proby pobrania zakonczyly sie bledem.")
     return 0
+
+
+def previous_unconsumed(stan: Path) -> dict:
+    """Operacje z poprzedniego stan/zmiany.json, ktorych nikt nie skonsumowal (aktualizuj.py zapisuje
+    run_at wczytanego pliku w stan/kolejka.json -> ingested). Bez tego dwa kolejne przebiegi
+    update_data.py (albo przerwanie miedzy update_data a kolejka) gubilyby zmiany pierwszego."""
+    if CI_MODE:        # GitHub Actions: swiezy checkout, zmiany.json nie jest wersjonowany
+        return {}
+    try:
+        prev = read_json(stan / "zmiany.json")
+        kol = read_json(stan / "kolejka.json")
+    except (ValueError, OSError):
+        return {}
+    if not isinstance(prev, dict) or prev.get("dry_run"):
+        return {}
+    ops: dict[str, str] = {}
+    for op in ("added", "changed", "removed"):
+        for k in prev.get(op) or []:
+            ops[str(k)] = merge_op(ops.get(str(k)), op)
+    if not ops:
+        return {}
+    if isinstance(kol, dict) and isinstance(kol.get("ingested"), dict)             and kol["ingested"].get("zmiany.json") == prev.get("run_at"):
+        return {}
+    return ops
+
+
+def combine_ops(prev: dict, new: dict) -> dict:
+    out = dict(prev)
+    for k, o in new.items():
+        out[k] = merge_op(out.get(k), o)
+    return out
 
 
 def _finish_indexes(store: Store, dane: Path, meta: Meta, old_idx: dict):
@@ -1402,6 +1566,8 @@ def build_parser():
                     help="pozwol na wycofanie > 3%% aktow (po recznym sprawdzeniu przyczyny)")
     ap.add_argument("--ci", action="store_true",
                     help="tryb GitHub Actions: manifest wiazacy, brak lokalnych plikow nie powoduje pelnego pobrania")
+    ap.add_argument("--accept-shrink", action="store_true",
+                    help="zezwol na nadpisanie pliku wyraznie mniejsza trescia (<30%% poprzedniej) - po recznym sprawdzeniu")
     ap.add_argument("--hash", action="store_true",
                     help="bootstrap: policz sha256 wszystkich plikow (domyslnie leniwie przy zmianie)")
     return ap
