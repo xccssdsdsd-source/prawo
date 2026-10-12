@@ -79,6 +79,8 @@ Jeśli plan kończy się `ZABLOKOWANY` lub `BŁĄD`, zatrzymaj się i wyjaśnij 
 
 ## 5. Jak działa aktualizacja (żebyś wiedział, co robisz)
 
+- **Zakres (decyzja właściciela):** pomijane są kategoria `inne` (sprostowania, obwieszczenia o utracie mocy, wyniki) oraz akty DU starsze niż 1990 bez tekstu ujednoliconego (`WYKLUCZONE_KATEGORIE`, `STARE_DO` w `pipeline/update_data.py`). Zmiana zakresu = zmiana tych stałych + zgoda właściciela.
+
 - **Przyrostowo.** `update_data.py` porównuje metadane z API z `stan/manifest.json`. Nowe akty pobiera, przy zmianie `changeDate` pobiera ponownie i porównuje sha256 (sama zmiana daty bez zmiany treści to nie „zmiana”). Akty, które przestały obowiązywać, przenosi do `dane/_wycofane/` (nie kasuje).
 - **Kolejka zmian** (`stan/kolejka.json`): co jeszcze nie trafiło do eksportu i do bazy. Dzięki niej przerwany lub nieudany przebieg niczego nie gubi: kolejny przebieg dokończy zaległości, nawet jeśli API nie pokaże już tych samych zmian.
 - **`data_as_of`** = data zapisu indeksów `dane/indeks_*.json` (tak liczy `build_data_info.py`). Gdy przebieg był pełny i bez błędów, `aktualizuj.py` odnawia znacznik czasu indeksów, żeby „brak nowości” też oznaczał „sprawdzone dzisiaj”. Przebieg częściowy (`--lata`, `--max-akty`, błędy pobierania) tej daty **nie** przesuwa.

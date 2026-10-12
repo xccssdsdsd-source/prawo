@@ -70,6 +70,8 @@ EMPTY_STATUS = "(pusty)"   # API zwrocilo akt bez pola status
 ST_OBOW = "obowiązujący"
 ST_TJ = "akt posiada tekst jednolity"
 ST_U = (ST_OBOW, ST_TJ)
+WYKLUCZONE_KATEGORIE = {"inne"}   # sprostowania, obwieszczenia o utracie mocy, wyniki
+STARE_DO = 1990                   # akty starsze niz to bez tekstu ujednoliconego sa pomijane
 
 INDEKSY = {
     "obow": "indeks_obowiazujacych.json",
@@ -363,6 +365,16 @@ def digest_year(pub: str, year: int, items: list):
             targets[base] = dict(key=base, pub=pub, year=year, pos=pos, item=it,
                                  kategoria="mp", kind="main",
                                  status=status, changeDate=it.get("changeDate"))
+    # Decyzja wlasciciela: bez sprostowan/obwieszczen "inne" i bez starych aktow
+    # (przed STARE_DO) nieposiadajacych tekstu ujednoliconego.
+    for key in list(targets):
+        t = targets[key]
+        if t["kind"] != "main":
+            continue
+        if t["kategoria"] in WYKLUCZONE_KATEGORIE:
+            del targets[key]
+        elif t["pub"] == "DU" and t["year"] < STARE_DO and (key + "#U") not in targets:
+            del targets[key]
     return targets, statuses, latest
 
 
