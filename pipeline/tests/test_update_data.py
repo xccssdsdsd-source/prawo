@@ -25,6 +25,8 @@ sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(ROOT))
 
 import update_data as ud  # noqa: E402
+# fikstury maja wlasne akty: nie uzywaj zakres.json z repo (zakres testujemy osobno)
+ud.ZAKRES_PLIK = ud.ROOT / "_brak_zakresu_w_testach.json"
 
 ud.META_RETRY_PAUSE = 0      # testy nie czekaja na ponowienia metadanych
 ud.YEAR_RETRY_SLEEP = 0
@@ -666,7 +668,15 @@ class TestUtils(unittest.TestCase):
 REAL_DANE = ROOT / "dane"
 
 
-@unittest.skipUnless((REAL_DANE / "indeks_mp.json").is_file(), "brak prawdziwego dane/ - test probki pominiety")
+def _real_dane_ma_mp() -> bool:
+    """Probka wymaga prawdziwych aktow M.P. (zakres.json moze ich nie obejmowac - wtedy pomijamy)."""
+    try:
+        return len(json.loads((REAL_DANE / "indeks_mp.json").read_text(encoding="utf-8"))) > 0
+    except (OSError, ValueError):
+        return False
+
+
+@unittest.skipUnless(_real_dane_ma_mp(), "brak prawdziwego dane/ z aktami M.P. - test probki pominiety")
 class TestBootstrapOnSampleCopy(Base):
     """Bootstrap na KOPII malej probki prawdziwych danych (prawdziwy dane/ tylko do odczytu)."""
 

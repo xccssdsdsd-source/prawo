@@ -526,7 +526,9 @@ def krok_dane(ctx: Ctx, k: Krok) -> None:
         return
     manifest = ctx.stan / "manifest.json"
     ma_indeksy = any((ctx.dane / n).exists() for n in INDEKSY)
-    pierwszy = ctx.args.pierwszy_raz or not manifest.exists()
+    # zakres.json (tylko wybrane akty) ogranicza pierwsze pobranie: brak manifestu nie oznacza wtedy pelnego pobrania
+    zakres = (ctx.root / "zakres.json").is_file()
+    pierwszy = (ctx.args.pierwszy_raz or not manifest.exists()) and not zakres
     baza_args = ["--dane", str(ctx.dane), "--stan", str(ctx.stan)]
 
     if pierwszy:
@@ -575,7 +577,8 @@ def krok_dane(ctx: Ctx, k: Krok) -> None:
     if ctx.dry:
         tmp = Path(tempfile.mkdtemp(prefix="prawo_dryrun_"))
         try:
-            shutil.copy2(manifest, tmp / "manifest.json")      # prawdziwy stan/ zostaje nietknięty
+            if manifest.exists():
+                shutil.copy2(manifest, tmp / "manifest.json")  # prawdziwy stan/ zostaje nietknięty
             cmd = ctx.python("pipeline/update_data.py", "--dry-run", "--dane", str(ctx.dane), "--stan", str(tmp))
             if ctx.args.lata:
                 cmd += ["--lata", ctx.args.lata]

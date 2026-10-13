@@ -1,0 +1,19 @@
+{
+  "_opis": "Zakres aktualizacji: tylko wymienione akty (klucze bazowe DU/rok/poz, bez #U - tekst ujednolicony #U dociagany automatycznie). Gdy ten plik istnieje, update_data.py pobiera, aktualizuje i raportuje WYLACZNIE te akty; reszta z API Sejmu jest pomijana. Usuniecie pliku = pelny zbior. Zmiana zakresu: dopisz/usun klucz i uruchom aktualizacje.",
+  "_grupy": {
+    "karne": ["DU/1997/553 Kodeks karny", "DU/1997/555 Kodeks postepowania karnego"],
+    "spolki": ["DU/2000/1037 Kodeks spolek handlowych"],
+    "cywilne": ["DU/1964/93 Kodeks cywilny", "DU/1964/296 Kodeks postepowania cywilnego"],
+    "europejskie": ["DU/1993/284 Konwencja o ochronie praw czlowieka i podstawowych wolnosci (EKPC)"],
+    "podstawowe": ["DU/1997/483 Konstytucja RP"]
+  },
+  "akty": [
+    "DU/1997/553",
+    "DU/1997/555",
+    "DU/2000/1037",
+    "DU/1964/93",
+    "DU/1964/296",
+    "DU/1993/284",
+    "DU/1997/483"
+  ]
+}

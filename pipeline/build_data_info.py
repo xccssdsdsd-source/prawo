@@ -66,6 +66,8 @@ def load_json(path, default=None):
 
 
 def latest(items):
+    if not items:            # zakres.json moze nie obejmowac danej kategorii (np. M.P.)
+        return None
     return max(items, key=lambda x: (x.get("promulgation") or "", x.get("pos") or 0))
 
 
@@ -119,11 +121,11 @@ def build_sources(raw_sources, stan_dir, du, mp, uj):
         status, enabled = effective_status(e)
         count = newest = None
         if sid == "eli-du":
-            count, newest = len(du), latest(du).get("promulgation")
+            count, newest = len(du), (latest(du) or {}).get("promulgation")
         elif sid == "eli-mp":
-            count, newest = len(mp), latest(mp).get("promulgation")
+            count, newest = len(mp), (latest(mp) or {}).get("promulgation")
         elif sid == "isap-ujednolicone":
-            count, newest = len(uj), latest(uj).get("promulgation")
+            count, newest = len(uj), (latest(uj) or {}).get("promulgation")
         else:
             st = load_json(stan_dir / f"zrodlo_{sid}.json", {}) or {}
             if isinstance(st.get("count"), int):
@@ -299,6 +301,8 @@ def main(argv=None):
             pass
 
     l_du, l_mp, l_uj = latest(du), latest(mp), latest(uj)
+    _zakres = load_json(ROOT / "zakres.json", {}) or {}
+    zakres_n = len(_zakres.get("akty") or []) if isinstance(_zakres, dict) else 0
     sources = build_sources(load_json(a.zrodla), stan, du, mp, uj)
     run_at, run_summary = last_update(stan)
 
@@ -306,22 +310,24 @@ def main(argv=None):
         "data_as_of": pobrano_dt.date().isoformat(),
         "downloaded_at_utc": pobrano_dt.isoformat(timespec="minutes"),
         "source": "API ELI Sejmu RP (https://api.sejm.gov.pl/eli)",
-        "scope": "Dz.U. i M.P. – tylko akty o statusie 'obowiązujący' (+ teksty ujednolicone ISAP)",
+        "scope": (f"Tylko akty z zakres.json ({zakres_n} aktów; obowiązujące + teksty ujednolicone ISAP)"
+                  if zakres_n else
+                  "Dz.U. i M.P. – tylko akty o statusie 'obowiązujący' (+ teksty ujednolicone ISAP)"),
         "dz_u": {
             "documents": len(du),
-            "latest_act": l_du["displayAddress"],
-            "latest_promulgation_date": l_du.get("promulgation"),
-            "latest_api_change_date": max(x.get("changeDate") or "" for x in du)[:10],
+            "latest_act": l_du["displayAddress"] if l_du else None,
+            "latest_promulgation_date": l_du.get("promulgation") if l_du else None,
+            "latest_api_change_date": max((x.get("changeDate") or "" for x in du), default="")[:10],
         },
         "m_p": {
             "documents": len(mp),
-            "latest_act": l_mp["displayAddress"],
-            "latest_promulgation_date": l_mp.get("promulgation"),
+            "latest_act": l_mp["displayAddress"] if l_mp else None,
+            "latest_promulgation_date": l_mp.get("promulgation") if l_mp else None,
         },
         "consolidated_texts": {
             "documents": len(uj),
-            "latest_act_with_consolidated_text": l_uj["displayAddress"],
-            "latest_promulgation_date_among_them": l_uj.get("promulgation"),
+            "latest_act_with_consolidated_text": l_uj["displayAddress"] if l_uj else None,
+            "latest_promulgation_date_among_them": l_uj.get("promulgation") if l_uj else None,
             "note": "Tekst ujednolicony odzwierciedla stan prawny na dzień jego sporządzenia; zmiany ogłoszone później mogą nie być w nim ujęte.",
         },
         "categories": dict(Counter(x.get("kategoria") for x in du + mp + uj)),

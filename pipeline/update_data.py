@@ -80,6 +80,8 @@ KATEGORIE_DIRS = ("ujednolicone", "jednolite", "podstawowe", "zmieniajace", "mp"
                   "orzeczenie", "umowa", "inne")
 WYCOFANE = "_wycofane"
 KEY_RE = re.compile(r"^(DU|MP)/(\d+)/(\d+)(#U)?$")
+ZAKRES_PLIK = ROOT / "zakres.json"   # opcjonalny zawezony zakres aktow (patrz zakres.json)
+ZAKRES = None                          # None = caly zbior; inaczej zbior kluczy bazowych (bez #U)
 
 
 # --------------------------------------------------------------------------- wyjatki
@@ -175,6 +177,26 @@ def unique_path(p: Path) -> Path:
         if not cand.exists():
             return cand
     raise Fatal(f"Nie mozna znalezc wolnej nazwy dla {p}")
+
+
+def base_key(key: str) -> str:
+    return key.split("#", 1)[0]
+
+
+def load_zakres(path: Path | None):
+    """Zbior kluczy bazowych z zakres.json; None gdy pliku nie ma (wtedy caly zbior)."""
+    if path is None or not path.is_file():
+        return None
+    try:
+        akty = json.loads(path.read_text(encoding="utf-8"))["akty"]
+    except (ValueError, KeyError, TypeError, OSError) as e:
+        raise Fatal(f"Zakres {path} jest uszkodzony ({e}).")
+    zb = set()
+    for a in akty:
+        if not isinstance(a, str) or not re.match(r"^(DU|MP)/\d+/\d+$", a):
+            raise Fatal(f"Zakres {path}: niepoprawny klucz {a!r} (oczekiwano np. DU/1997/553)")
+        zb.add(a)
+    return zb
 
 
 def parse_key(key: str):
@@ -1288,9 +1310,15 @@ def summarize_plan(plan, meta: Meta, manifest: dict) -> dict:
 
 
 def run(args, client=None) -> int:
-    global CI_MODE, ACCEPT_SHRINK
+    global CI_MODE, ACCEPT_SHRINK, ZAKRES
     CI_MODE = bool(getattr(args, "ci", False))
     ACCEPT_SHRINK = bool(getattr(args, "accept_shrink", False))
+    if getattr(args, "bez_zakresu", False):
+        ZAKRES = None
+    else:
+        ZAKRES = load_zakres(Path(args.zakres) if getattr(args, "zakres", None) else ZAKRES_PLIK)
+    if ZAKRES is not None:
+        log(f"Zakres: {len(ZAKRES)} aktow z {ZAKRES_PLIK.name} (reszta z API jest pomijana)")
     dane = Path(args.dane).resolve()
     stan = Path(args.stan).resolve()
     dry = args.dry_run
@@ -1367,12 +1395,21 @@ def _run(args, client, dane, stan, dry, lata, t0, interrupted) -> int:
     else:
         store.manifest = manifest
 
+    if ZAKRES is not None and store.manifest:
+        n0 = len(store.manifest)
+        store.manifest = {k: v for k, v in store.manifest.items() if base_key(k) in ZAKRES}
+        manifest = store.manifest
+        if len(manifest) != n0:
+            log(f"Zakres: w manifescie zostaje {len(manifest)} z {n0} wpisow (pozostale tylko pomijane)")
+
     prev = store.load_journal()
     if prev:
         log(f"Wznawiam po przerwanym przebiegu ({prev} zmian z poprzedniego przebiegu zachowane).")
 
     # ---- metadane
     meta = fetch_metadata(client, ("DU", "MP"), lata, args.workers)
+    if ZAKRES is not None:
+        meta.targets = {k: t for k, t in meta.targets.items() if base_key(k) in ZAKRES}
     if not meta.ok_years and meta.failed:
         raise Fatal("Nie udalo sie pobrac metadanych z API ELI: " + "; ".join(
             f"{k}: {v}" for k, v in list(meta.failed.items())[:5]))
@@ -1566,6 +1603,9 @@ def build_parser():
                     help="pozwol na wycofanie > 3%% aktow (po recznym sprawdzeniu przyczyny)")
     ap.add_argument("--ci", action="store_true",
                     help="tryb GitHub Actions: manifest wiazacy, brak lokalnych plikow nie powoduje pelnego pobrania")
+    ap.add_argument("--zakres", default=None,
+                    help="plik JSON z lista aktow (domyslnie zakres.json w repo, jesli istnieje)")
+    ap.add_argument("--bez-zakresu", action="store_true", help="pomin zakres.json: caly zbior z API")
     ap.add_argument("--accept-shrink", action="store_true",
                     help="zezwol na nadpisanie pliku wyraznie mniejsza trescia (<30%% poprzedniej) - po recznym sprawdzeniu")
     ap.add_argument("--hash", action="store_true",
