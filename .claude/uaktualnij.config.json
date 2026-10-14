@@ -2,7 +2,7 @@
   "_opis": "Trwala zgoda wlasciciela na kroki zewnetrzne. false = aktualizuj.py pomija krok i mowi, co zrobic recznie. Opis: docs/AKTUALIZACJA.md",
   "auto_load_db": true,
   "auto_commit": true,
-  "auto_push": false,
+  "auto_push": true,
   "auto_deploy": false,
   "backup_before_update": true,
   "baza_max_mb": 450,
