@@ -74,7 +74,7 @@ Jeśli plan kończy się `ZABLOKOWANY` lub `BŁĄD`, zatrzymaj się i wyjaśnij 
 6. co pominięto i dlaczego; ostrzeżenia z raportu;
 7. co dalej (np. „napisz tak, a wypchnę i wdrożę”).
 
-**Krok 6 - push i wdrożenie (tylko za zgodą).** Gdy `auto_push` / `auto_deploy` są `false`, zapytaj raz. Przed pushem pokaż właścicielowi `git log @{u}..HEAD --oneline`: zwykły `git push` wypycha **wszystkie** niewypchnięte commity z gałęzi (także te, których właściciel nie przejrzał), nie tylko commit aktualizacji (`aktualizuj.py` wypisuje tę listę w raporcie). Po „tak”:
+**Krok 6 - push i wdrożenie (tylko za zgodą).** Wyjątek wskazany wprost przez właściciela: na koniec pracy nad projektem wypychaj zmiany na `main` (fast-forward, bez force), nawet gdy `auto_push` jest `false`. Gdy `auto_push` / `auto_deploy` są `false` (a nie ma takiego polecenia), zapytaj raz. Przed pushem pokaż właścicielowi `git log @{u}..HEAD --oneline`: zwykły `git push` wypycha **wszystkie** niewypchnięte commity z gałęzi (także te, których właściciel nie przejrzał), nie tylko commit aktualizacji (`aktualizuj.py` wypisuje tę listę w raporcie). Po „tak”:
 `python aktualizuj.py --tylko commit --zgoda push`, potem `python aktualizuj.py --tylko wdrozenie --zgoda wdrozenie`. Wdrożenie jest wstrzymywane, dopóki baza nie zawiera wszystkich zmian (strona nie może podać daty stanu, której baza nie ma).
 
 ## 5. Jak działa aktualizacja (żebyś wiedział, co robisz)
