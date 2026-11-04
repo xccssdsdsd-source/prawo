@@ -77,6 +77,8 @@ Jeśli plan kończy się `ZABLOKOWANY` lub `BŁĄD`, zatrzymaj się i wyjaśnij 
 **Krok 6 - push i wdrożenie (tylko za zgodą).** Wyjątek wskazany wprost przez właściciela: na koniec pracy nad projektem wypychaj zmiany na `main` (fast-forward, bez force), nawet gdy `auto_push` jest `false`. Gdy `auto_push` / `auto_deploy` są `false` (a nie ma takiego polecenia), zapytaj raz. Przed pushem pokaż właścicielowi `git log @{u}..HEAD --oneline`: zwykły `git push` wypycha **wszystkie** niewypchnięte commity z gałęzi (także te, których właściciel nie przejrzał), nie tylko commit aktualizacji (`aktualizuj.py` wypisuje tę listę w raporcie). Po „tak”:
 `python aktualizuj.py --tylko commit --zgoda push`, potem `python aktualizuj.py --tylko wdrozenie --zgoda wdrozenie`. Wdrożenie jest wstrzymywane, dopóki baza nie zawiera wszystkich zmian (strona nie może podać daty stanu, której baza nie ma).
 
+**Produkcja = `main`.** Każde wdrożenie na produkcję jest poprzedzone pushem na `main` (fast-forward, bez force). Właściciel zlecił to wprost: push na `main` przy wdrożeniu produkcyjnym ma być zawsze. Ustawienie `auto_push` w configu nie jest zmieniane tą zasadą.
+
 ## 5. Jak działa aktualizacja (żebyś wiedział, co robisz)
 
 - **Przyrostowo.** `update_data.py` porównuje metadane z API z `stan/manifest.json`. Nowe akty pobiera, przy zmianie `changeDate` pobiera ponownie i porównuje sha256 (sama zmiana daty bez zmiany treści to nie „zmiana”). Akty, które przestały obowiązywać, przenosi do `dane/_wycofane/` (nie kasuje).
