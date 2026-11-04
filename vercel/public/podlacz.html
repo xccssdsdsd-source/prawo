@@ -129,7 +129,7 @@ footer p{margin:0 0 6px}
   <h1>Podłącz Prawo PL do swojego AI</h1>
   <p class="lead">Krok po kroku: jak dać Claude, Gemini, ChatGPT, Cursorowi i innym asystentom dostęp do polskich przepisów (Dz.U. i M.P.). Wybierz, czego używasz, skopiuj gotowy snippet i sprawdź połączenie przyciskiem testu.</p>
   <div class="asof-banner" role="status">
-    <strong>Stan danych na dzień <span id="asof-val"><!--ASOF:START-->20.10.2026<!--ASOF:END--></span></strong>
+    <strong>Stan danych na dzień <span id="asof-val"><!--ASOF:START-->04.11.2026<!--ASOF:END--></span></strong>
     <p style="margin:4px 0 0">Przepisy ogłoszone później nie są uwzględnione. <a href="/data-info.json">Pobierz /data-info.json</a> (daty, liczby, źródła). <a href="#stan-danych">Dlaczego to ważne</a></p>
   </div>
   <noscript>
@@ -203,7 +203,7 @@ Zasady:
   <h2 id="h-stan">Reguła: „Stan danych na dzień …”</h2>
   <p class="sub">Najważniejsza zasada dla każdego modelu korzystającego z tego API.</p>
   <div class="callout warn" role="note">
-    <p><strong>W każdej odpowiedzi opartej na API model musi podać linię „Stan danych na dzień <span id="asof-val2"><!--ASOF:START-->20.10.2026<!--ASOF:END--></span>”</strong> oraz ostrzeżenie, że przepisy ogłoszone po tej dacie nie są uwzględnione, a teksty ujednolicone mogą odzwierciedlać stan starszy niż ta data.</p>
+    <p><strong>W każdej odpowiedzi opartej na API model musi podać linię „Stan danych na dzień <span id="asof-val2"><!--ASOF:START-->04.11.2026<!--ASOF:END--></span>”</strong> oraz ostrzeżenie, że przepisy ogłoszone po tej dacie nie są uwzględnione, a teksty ujednolicone mogą odzwierciedlać stan starszy niż ta data.</p>
   </div>
   <ul class="plain">
     <li>Wartość bierze się z pola <code>data_as_of</code> w odpowiedzi REST i w narzędziach MCP (REST ma też nagłówek <code>X-Data-As-Of</code>), z <code>/api/health</code> albo z pliku <a href="/data-info.json">/data-info.json</a>.</li>
