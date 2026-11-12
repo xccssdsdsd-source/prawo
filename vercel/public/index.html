@@ -88,16 +88,16 @@ a.btn.ghost{background:transparent;color:var(--accent)}
   <h2 id="h-fresh">Aktualność danych</h2>
   <p class="sub">Data freshness</p>
   <!--DATA-INFO:START-->
-  <p class="asof" id="asof">Stan danych na dzień 06.11.2026</p>
+  <p class="asof" id="asof">Stan danych na dzień 12.11.2026</p>
   <dl class="grid">
-    <div class="stat"><dt>Najnowszy akt Dz.U.</dt><dd id="dzu">Dz.U. 1997 nr 78 poz. 483</dd></div>
-    <div class="stat"><dt>Najnowszy akt M.P.</dt><dd id="mp">None</dd></div>
-    <div class="stat"><dt>Dokumenty Dz.U.</dt><dd id="n-dzu">2</dd></div>
-    <div class="stat"><dt>Dokumenty M.P.</dt><dd id="n-mp">0</dd></div>
-    <div class="stat"><dt>Teksty ujednolicone</dt><dd id="n-cons">6<small id="cons-latest">najnowszy: Dz.U. 2000 nr 94 poz. 1037 (08.11.2000)</small></dd></div>
+    <div class="stat"><dt>Najnowszy akt Dz.U.</dt><dd id="dzu">Dz.U. 2026 poz. 1480<small>ogłoszony 09.11.2026</small></dd></div>
+    <div class="stat"><dt>Najnowszy akt M.P.</dt><dd id="mp">M.P. 2026 poz. 1046<small>ogłoszony 28.10.2026</small></dd></div>
+    <div class="stat"><dt>Dokumenty Dz.U.</dt><dd id="n-dzu">17&nbsp;746</dd></div>
+    <div class="stat"><dt>Dokumenty M.P.</dt><dd id="n-mp">2&nbsp;743</dd></div>
+    <div class="stat"><dt>Teksty ujednolicone</dt><dd id="n-cons">1&nbsp;674<small id="cons-latest">najnowszy: Dz.U. 2026 poz. 1335 (14.10.2026)</small></dd></div>
   </dl>
   <p class="note" id="cons-note"><strong>Teksty ujednolicone:</strong> Tekst ujednolicony odzwierciedla stan prawny na dzień jego sporządzenia; zmiany ogłoszone później mogą nie być w nim ujęte.</p>
-  <p class="note" id="last-run">Ostatnia aktualizacja danych: 06.11.2026.</p>
+  <p class="note" id="last-run">Ostatnia aktualizacja danych: 12.11.2026.</p>
   <h3>Czego nie obejmuje</h3>
   <ul class="plain" id="notcov">
     <li>akty uchylone i wygasłe</li>
@@ -108,9 +108,9 @@ a.btn.ghost{background:transparent;color:var(--accent)}
   </ul>
   <h3>Źródła danych</h3>
   <ul class="srclist" id="sources">
-    <li><strong>Dziennik Ustaw (ISAP / API ELI Sejmu)</strong><span class="st st-aktywne">aktywne</span>2 dokumentów<span class="d">Akty prawne ogłoszone w Dzienniku Ustaw: teksty ogłoszone obowiązujące (HTML/PDF) oraz metadane z api.sejm.gov.pl/eli. Obsługiwane przez pipeline/update_data.py.</span></li>
-    <li><strong>Monitor Polski (ISAP / API ELI Sejmu)</strong><span class="st st-aktywne">aktywne</span>0 dokumentów<span class="d">Akty ogłoszone w Monitorze Polskim (uchwały, zarządzenia, obwieszczenia) z api.sejm.gov.pl/eli. Obsługiwane przez pipeline/update_data.py.</span></li>
-    <li><strong>Teksty ujednolicone (ISAP)</strong><span class="st st-aktywne">aktywne</span>6 dokumentów, najnowszy z 08.11.2000<span class="d">Teksty jednolite/ujednolicone ustaw i rozporządzeń (PDF typu U) z api.sejm.gov.pl/eli. Wersja preferowana przez API. Obsługiwane przez pipeline/update_data.py.</span></li>
+    <li><strong>Dziennik Ustaw (ISAP / API ELI Sejmu)</strong><span class="st st-aktywne">aktywne</span>17&nbsp;746 dokumentów, najnowszy z 09.11.2026<span class="d">Akty prawne ogłoszone w Dzienniku Ustaw: teksty ogłoszone obowiązujące (HTML/PDF) oraz metadane z api.sejm.gov.pl/eli. Obsługiwane przez pipeline/update_data.py.</span></li>
+    <li><strong>Monitor Polski (ISAP / API ELI Sejmu)</strong><span class="st st-aktywne">aktywne</span>2&nbsp;743 dokumentów, najnowszy z 28.10.2026<span class="d">Akty ogłoszone w Monitorze Polskim (uchwały, zarządzenia, obwieszczenia) z api.sejm.gov.pl/eli. Obsługiwane przez pipeline/update_data.py.</span></li>
+    <li><strong>Teksty ujednolicone (ISAP)</strong><span class="st st-aktywne">aktywne</span>1&nbsp;674 dokumentów, najnowszy z 14.10.2026<span class="d">Teksty jednolite/ujednolicone ustaw i rozporządzeń (PDF typu U) z api.sejm.gov.pl/eli. Wersja preferowana przez API. Obsługiwane przez pipeline/update_data.py.</span></li>
     <li><strong>SAOS – orzeczenia sądów</strong><span class="st st-uśpione">uśpione</span><span class="d">System Analizy Orzeczeń Sądowych (ICM UW): orzeczenia sądów powszechnych, Sądu Najwyższego, sądów administracyjnych, Trybunału Konstytucyjnego i KIO. Fetcher przyrostowy po sinceModificationDate; tekst dzielony na fragmenty ~2000 znaków, kategoria 'wyrok', doc_id SAOS/&lt;id&gt;.</span></li>
     <li><strong>Prawo UE po polsku (Publications Office / Cellar)</strong><span class="st st-uśpione">uśpione</span><span class="d">Akty prawa UE (rozporządzenia, dyrektywy, wybrane artykuły traktatów) po numerze CELEX z publications.europa.eu, w polskiej wersji językowej. Lista 44 zweryfikowanych aktów w zrodla/eurlex/seed.json; podział na 'Artykuł N'.</span></li>
   </ul>
